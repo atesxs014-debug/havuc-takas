@@ -1,0 +1,15 @@
+<% const k = getKategori(ilan.category); %>
+<a class="kart" href="<%= ilanUrl(ilan) %>">
+  <div class="kart-gorsel" style="--r1:<%= k.renk[0] %>;--r2:<%= k.renk[1] %>">
+    <% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt="<%= ilan.title %>" loading="lazy"><% } else { %><%- k.ikon %><% } %>
+    <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi</span><% } %>
+  </div>
+  <div class="kart-govde">
+    <div class="rozetler">
+      <% if (ilan.price != null) { %><span class="fiyat-rozet"><%= fiyat(ilan.price) %></span><% } %>
+      <% if (ilan.is_swap) { %><span class="takas-rozet">Takaslık</span><% } %>
+    </div>
+    <h3 class="kart-baslik"><%= ilan.title %></h3>
+    <p class="kart-alt"><%= ilan.views %> görüntülenme<% if (typeof konumGoster !== 'undefined' && konumGoster) { %> · <%= konumAdi(ilan.il, ilan.ilce) %><% } %></p>
+  </div>
+</a>

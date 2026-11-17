@@ -1,0 +1,84 @@
+<%- include('partials/head') %>
+<h1 class="sayfa-baslik">Yönetim Paneli</h1>
+<nav class="sekmeler">
+  <a href="?tab=bekleyen" class="<%= tab === 'bekleyen' ? 'aktif' : '' %>">Reklam başvuruları <span class="rozet"><%= c.bekleyen %></span></a>
+  <a href="?tab=aktif" class="<%= tab === 'aktif' ? 'aktif' : '' %>">Aktif reklamlar (<%= c.aktif %>)</a>
+  <a href="?tab=gecmis" class="<%= tab === 'gecmis' ? 'aktif' : '' %>">Geçmiş</a>
+  <a href="?tab=sikayet" class="<%= tab === 'sikayet' ? 'aktif' : '' %>">Şikayetler <span class="rozet"><%= c.sikayet %></span></a>
+  <a href="?tab=ilan" class="<%= tab === 'ilan' ? 'aktif' : '' %>">İlanlar (<%= c.ilan %>)</a>
+  <a href="?tab=uye" class="<%= tab === 'uye' ? 'aktif' : '' %>">Üyeler (<%= c.uye %>)</a>
+</nav>
+
+<% if (!rows.length) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
+
+<% if (['bekleyen', 'aktif', 'gecmis'].includes(tab)) { %>
+  <div class="admin-liste">
+  <% rows.forEach(function (ad) { %>
+    <article class="admin-kart">
+      <div class="admin-kart-bas">
+        <% if (ad.image) { %><img class="reklam-logo" src="/uploads/<%= ad.image %>" alt=""><% } %>
+        <div>
+          <strong><%= ad.business_name %></strong>
+          <small>📍 <%= konumAdi(ad.il, ad.ilce) %><%= ad.ilce ? '' : ' (il geneli)' %> · Alan <%= ad.slot %> · <%= ad.months %> ay</small>
+        </div>
+        <span class="durum durum-<%= ad.status %>"><%= { pending: 'Bekliyor', active: 'Yayında', rejected: 'Reddedildi', ended: 'Bitti' }[ad.status] %></span>
+      </div>
+      <p><%= ad.description %></p>
+      <p class="kucuk">
+        <% if (ad.phone) { %>📞 <%= ad.phone %> · <% } %><% if (ad.website) { %>🔗 <%= ad.website %> · <% } %>
+        👤 <%= ad.contact_name %> (<a href="mailto:<%= ad.contact_email %>"><%= ad.contact_email %></a>) · Başvuru: <%= tarih(ad.created_at) %>
+        <% if (ad.status === 'active') { %><br>Yayın: <%= tarih(ad.start_date) %> – <%= tarih(ad.end_date) %> · <%= ad.impressions %> gösterim · <%= ad.clicks %> tıklama<% } %>
+        <% if (ad.admin_note) { %><br>Not: <%= ad.admin_note %><% } %>
+      </p>
+      <% if (ad.status === 'pending') { %>
+        <form method="post" action="/yonetim/reklam/<%= ad.id %>/onayla" class="admin-form">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <label>Alan <select name="slot"><% for (let i = 1; i <= SLOT_SAYISI; i++) { %><option <%= ad.slot === i ? 'selected' : '' %>><%= i %></option><% } %></select></label>
+          <label>Ay <input type="number" name="months" min="1" max="24" value="<%= ad.months %>"></label>
+          <input name="note" placeholder="Not (ör. ödeme alındı)">
+          <button class="btn btn-mini btn-yesil">Onayla & Yayınla</button>
+          <button class="btn btn-mini btn-cizgi kirmizi" formaction="/yonetim/reklam/<%= ad.id %>/reddet">Reddet</button>
+        </form>
+      <% } else if (ad.status === 'active') { %>
+        <form method="post" action="/yonetim/reklam/<%= ad.id %>/uzat" class="admin-form">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <label>+ <input type="number" name="months" min="1" max="24" value="1"> ay</label>
+          <button class="btn btn-mini btn-yesil">Süreyi uzat</button>
+          <button class="btn btn-mini btn-cizgi kirmizi" formaction="/yonetim/reklam/<%= ad.id %>/durdur" data-confirm="Reklam yayından kaldırılsın mı?">Yayından kaldır</button>
+        </form>
+      <% } %>
+    </article>
+  <% }) %>
+  </div>
+<% } else if (tab === 'sikayet') { %>
+  <div class="admin-liste">
+  <% rows.forEach(function (r) { %>
+    <article class="admin-kart">
+      <p><a href="/ilan/<%= r.lid %>"><strong><%= r.title %></strong></a> <small>(<%= r.lstatus %>) · <%= tarih(r.created_at) %></small></p>
+      <p><%= r.reason %></p>
+      <div class="admin-form">
+        <form method="post" action="/yonetim/ilan/<%= r.lid %>/durum"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="sikayet"><button name="status" value="removed" class="btn btn-mini btn-cizgi kirmizi">İlanı kaldır</button></form>
+        <form method="post" action="/yonetim/sikayet/<%= r.id %>/kapat"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-cizgi">Şikayeti kapat</button></form>
+      </div>
+    </article>
+  <% }) %>
+  </div>
+<% } else if (tab === 'ilan') { %>
+  <div class="tablo-sar"><table class="tablo">
+    <thead><tr><th>#</th><th>Başlık</th><th>Konum</th><th>Satıcı</th><th>Durum</th><th></th></tr></thead>
+    <tbody><% rows.forEach(function (l) { %>
+      <tr><td><%= l.id %></td><td><a href="/ilan/<%= l.id %>"><%= l.title %></a></td><td><%= konumAdi(l.il, l.ilce) %></td><td><%= l.seller %></td><td><%= l.status %></td>
+        <td><form method="post" action="/yonetim/ilan/<%= l.id %>/durum"><input type="hidden" name="_csrf" value="<%= csrf %>">
+          <% if (l.status === 'removed') { %><button name="status" value="active" class="btn btn-mini btn-cizgi">Geri al</button><% } else { %><button name="status" value="removed" class="btn btn-mini btn-cizgi kirmizi">Kaldır</button><% } %>
+        </form></td></tr>
+    <% }) %></tbody>
+  </table></div>
+<% } else if (tab === 'uye') { %>
+  <div class="tablo-sar"><table class="tablo">
+    <thead><tr><th>#</th><th>Ad</th><th>E-posta</th><th>İlan</th><th>Kayıt</th></tr></thead>
+    <tbody><% rows.forEach(function (u) { %>
+      <tr><td><%= u.id %></td><td><%= u.name %><%= u.is_admin ? ' (yönetici)' : '' %></td><td><%= u.email %></td><td><%= u.ilan_sayisi %></td><td><%= tarih(u.created_at) %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+<% } %>
+<%- include('partials/foot') %>

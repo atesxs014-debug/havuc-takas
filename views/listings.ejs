@@ -1,0 +1,64 @@
+<%- include('partials/head') %>
+<h1 class="sayfa-baslik"><%= il ? (ilce ? ilce.ad + ', ' + il.ad : il.ad) + ' İlanları' : 'İlanlar' %> <small>(<%= toplam %> sonuç)</small></h1>
+
+<form class="filtre" method="get" action="/ilanlar">
+  <div class="arama">
+    <input type="search" name="q" value="<%= filtre.q %>" placeholder="🔍 İlan başlığı veya açıklamasında ara..." aria-label="Ara">
+    <button class="btn btn-yesil">Ara</button>
+  </div>
+  <div class="filtre-kutu">
+    <label>Sırala
+      <select name="sirala">
+        <% [['yeni','En Yeni'],['eski','En Eski'],['fiyat-artan','Fiyat (Düşükten Yükseğe)'],['fiyat-azalan','Fiyat (Yüksekten Düşüğe)'],['populer','En Çok Görüntülenen']].forEach(function (s) { %>
+          <option value="<%= s[0] %>" <%= filtre.sirala === s[0] ? 'selected' : '' %>><%= s[1] %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>İl / İlçe
+      <span class="select-ikili"><%- include('partials/location-select', { secIl: filtre.il, secIlce: filtre.ilce, ilBos: 'Tüm Türkiye', ilceBos: 'Tüm İlçeler' }) %></span>
+    </label>
+    <label>Kategori
+      <select name="kategori">
+        <option value="">Tüm Kategoriler</option>
+        <% kategoriler.forEach(function (k) { %><option value="<%= k.slug %>" <%= filtre.kategori === k.slug ? 'selected' : '' %>><%= k.ad %></option><% }) %>
+      </select>
+    </label>
+    <label>İlan Türü
+      <select name="tip">
+        <option value="">Hepsi</option>
+        <option value="satilik" <%= filtre.tip === 'satilik' ? 'selected' : '' %>>Satılık</option>
+        <option value="takas" <%= filtre.tip === 'takas' ? 'selected' : '' %>>Takaslık</option>
+      </select>
+    </label>
+    <button class="btn btn-yesil filtre-btn">Filtrele</button>
+  </div>
+</form>
+
+<% if (reklamlar) { %>
+  <%- include('partials/ad-slots', { reklamlar, reklamIl: il.slug, reklamIlce: ilce ? ilce.slug : '', reklamKonum: ilce ? ilce.ad : il.ad }) %>
+<% } %>
+
+<% if (il && !ilce) { %>
+  <details class="ilce-liste">
+    <summary><%= il.ad %> ilçeleri (<%= il.ilceler.length %>)</summary>
+    <div class="cipler"><% il.ilceler.forEach(function (i) { %><a href="/il/<%= il.slug %>/<%= i.slug %>"><%= i.ad %></a><% }) %></div>
+  </details>
+<% } %>
+
+<% if (ilanlar.length) { %>
+  <div class="grid"><% ilanlar.forEach(function (ilan) { %><%- include('partials/card', { ilan, konumGoster: true }) %><% }) %></div>
+  <% if (sayfaSayisi > 1) {
+       const qs = function (p) { const o = Object.assign({}, filtre, { sayfa: p }); return '/ilanlar?' + Object.keys(o).filter(function (k) { return o[k]; }).map(function (k) { return k + '=' + encodeURIComponent(o[k]); }).join('&'); }; %>
+    <nav class="sayfalama">
+      <% if (sayfa > 1) { %><a href="<%= qs(sayfa - 1) %>">← Önceki</a><% } %>
+      <span><%= sayfa %> / <%= sayfaSayisi %></span>
+      <% if (sayfa < sayfaSayisi) { %><a href="<%= qs(sayfa + 1) %>">Sonraki →</a><% } %>
+    </nav>
+  <% } %>
+<% } else { %>
+  <div class="bos-durum">
+    <p>Bu kriterlere uygun ilan bulunamadı.</p>
+    <a class="btn btn-yesil" href="/ilan-ver">+ İlk ilanı sen ver</a>
+  </div>
+<% } %>
+<%- include('partials/foot') %>

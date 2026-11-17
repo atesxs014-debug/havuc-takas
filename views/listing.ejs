@@ -1,0 +1,68 @@
+<%- include('partials/head') %>
+<nav class="breadcrumb">
+  <a href="/">Anasayfa</a> › <a href="/ilanlar?kategori=<%= kategori.slug %>"><%= kategori.ad %></a> › <span><%= ilan.title %></span>
+</nav>
+
+<div class="detay">
+  <div class="detay-sol">
+    <div class="detay-gorsel" style="--r1:<%= kategori.renk[0] %>;--r2:<%= kategori.renk[1] %>">
+      <% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt="<%= ilan.title %>"><% } else { %><%- kategori.ikon %><% } %>
+      <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi / Satıldı</span><% } %>
+    </div>
+  </div>
+
+  <div class="detay-sag">
+    <h1 class="detay-baslik"><%= ilan.title %></h1>
+    <p class="detay-meta">📍 <a href="/il/<%= ilan.il %>/<%= ilan.ilce %>"><%= konumAdi(ilan.il, ilan.ilce) %></a> · <%= ilan.views %> görüntülenme · <%= tarih(ilan.created_at) %></p>
+    <p class="detay-fiyat">
+      <% if (ilan.price != null) { %><%= fiyat(ilan.price) %><% } %>
+      <% if (ilan.is_swap) { %><span class="takas-rozet buyuk"><%= ilan.price != null ? 'Takasa da açık' : 'Takaslık' %></span><% } %>
+    </p>
+    <div class="detay-aciklama"><%= ilan.description %></div>
+
+    <div class="satici-kart">
+      <div class="satici">
+        <span class="avatar"><%= ilan.seller_name.charAt(0).toLocaleUpperCase('tr') %></span>
+        <div><strong><%= ilan.seller_name %></strong><small><%= new Date(ilan.seller_since.replace(' ', 'T') + 'Z').getFullYear() %>'den beri üye · <%= ilan.seller_count %> ilan</small></div>
+      </div>
+      <% if (isOwner) { %>
+        <a class="btn btn-yesil tam" href="/ilan/<%= ilan.id %>/duzenle">✏️ İlanı Düzenle</a>
+        <form method="post" action="/ilan/<%= ilan.id %>/durum" class="sahip-form">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <% if (ilan.status === 'active') { %><button name="status" value="sold" class="btn btn-cizgi">✅ Takas edildi / Satıldı</button>
+          <% } else { %><button name="status" value="active" class="btn btn-cizgi">Tekrar yayınla</button><% } %>
+          <button name="status" value="removed" class="btn btn-cizgi kirmizi" data-confirm="İlan kaldırılsın mı?">🗑 Kaldır</button>
+        </form>
+      <% } else { %>
+        <a class="btn btn-yesil tam" href="/mesajlar/<%= ilan.id %>/<%= ilan.user_id %>">💬 Satıcıya Mesaj Gönder</a>
+        <details class="sikayet">
+          <summary>🚩 İlanı Şikayet Et</summary>
+          <form method="post" action="/ilan/<%= ilan.id %>/sikayet">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <select name="reason" required>
+              <option value="">Neden?</option>
+              <option>Dolandırıcılık şüphesi</option>
+              <option>Yasaklı ürün</option>
+              <option>Yanlış kategori / bilgi</option>
+              <option>Uygunsuz içerik</option>
+              <option>Diğer</option>
+            </select>
+            <textarea name="detail" rows="2" maxlength="500" placeholder="Açıklama (isteğe bağlı)"></textarea>
+            <button class="btn btn-cizgi">Gönder</button>
+          </form>
+        </details>
+      <% } %>
+    </div>
+    <p class="guvenlik-not">🛡️ Ön ödeme yapmayın. Halka açık bir yerde buluşun, ürünü görerek elden teslim alın. <a href="/guvenli-takas">Güvenli takas rehberi</a></p>
+  </div>
+</div>
+
+<%- include('partials/ad-slots', { reklamlar, reklamIl: ilan.il, reklamIlce: ilan.ilce, reklamKonum: getIlce(ilan.il, ilan.ilce).ad }) %>
+
+<% if (benzer.length) { %>
+  <section>
+    <div class="bolum-bas"><h2 class="bolum-baslik">Benzer ilanlar</h2><a class="kucuk-link" href="/ilanlar?il=<%= ilan.il %>&kategori=<%= ilan.category %>">Tümünü Gör →</a></div>
+    <div class="grid"><% benzer.forEach(function (b) { %><%- include('partials/card', { ilan: b }) %><% }) %></div>
+  </section>
+<% } %>
+<%- include('partials/foot') %>

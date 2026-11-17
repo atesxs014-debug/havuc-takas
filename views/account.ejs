@@ -1,0 +1,13 @@
+<%- include('partials/head') %>
+<div class="bolum-bas">
+  <h1 class="sayfa-baslik">Merhaba, <%= user.name.split(' ')[0] %> 👋</h1>
+  <a class="btn btn-yesil" href="/ilan-ver">+ İlan Ver</a>
+</div>
+<p class="kucuk"><%= user.email %> · <a href="/mesajlar">Mesajlarım<% if (unread) { %> (<%= unread %> yeni)<% } %></a></p>
+<h2 class="bolum-baslik">İlanlarım (<%= ilanlar.length %>)</h2>
+<% if (ilanlar.length) { %>
+  <div class="grid"><% ilanlar.forEach(function (ilan) { %><%- include('partials/card', { ilan, konumGoster: true }) %><% }) %></div>
+<% } else { %>
+  <div class="bos-durum"><p>Henüz ilanın yok.</p><a class="btn btn-yesil" href="/ilan-ver">İlk ilanını ver</a></div>
+<% } %>
+<%- include('partials/foot') %>

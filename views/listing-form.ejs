@@ -1,0 +1,36 @@
+<%- include('partials/head') %>
+<div class="form-sayfa">
+  <h1 class="sayfa-baslik"><%= title %></h1>
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <form method="post" enctype="multipart/form-data" class="form kart-form"
+        action="<%= edit ? "/ilan/" + form.id + "/duzenle" : "/ilan-ver" %>">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Başlık<input name="title" required minlength="5" maxlength="90" value="<%= form.title || '' %>" placeholder="Örn. Az Kullanılmış Dağ Bisikleti"></label>
+    <label>Kategori
+      <select name="category" required>
+        <option value="">Seçin</option>
+        <% kategoriler.forEach(function (k) { %><option value="<%= k.slug %>" <%= form.category === k.slug ? 'selected' : '' %>><%= k.ad %></option><% }) %>
+      </select>
+    </label>
+    <fieldset class="tur">
+      <legend>İlan türü</legend>
+      <label class="radio"><input type="radio" name="tur" value="satilik" <%= form.tur === 'satilik' ? 'checked' : '' %>> Satılık</label>
+      <label class="radio"><input type="radio" name="tur" value="takas" <%= form.tur === 'takas' ? 'checked' : '' %>> Sadece takas</label>
+      <label class="radio"><input type="radio" name="tur" value="ikisi" <%= form.tur === 'ikisi' ? 'checked' : '' %>> Satılık + takasa açık</label>
+    </fieldset>
+    <label class="js-fiyat">Fiyat (TL)<input name="price" inputmode="numeric" value="<%= form.price != null ? form.price : '' %>" placeholder="3500"></label>
+    <div class="iki-kolon">
+      <%- include('partials/location-select', { secIl: form.il || '', secIlce: form.ilce || '', ilBos: 'İl seçin', ilceBos: 'İlçe seçin', zorunlu: true }) %>
+    </div>
+    <label>Açıklama<textarea name="description" rows="6" required minlength="10" maxlength="3000" placeholder="Ürünün durumu, kullanım süresi, kusurları..."><%= form.description || '' %></textarea></label>
+    <label>Fotoğraf <small>(JPG, PNG veya WEBP, en fazla 5 MB)</small>
+      <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
+    </label>
+    <% if (edit && form.image) { %>
+      <div class="mevcut-foto"><img src="/uploads/<%= form.image %>" alt=""><label class="radio"><input type="checkbox" name="remove_image" value="1"> Fotoğrafı kaldır</label></div>
+    <% } %>
+    <button class="btn btn-yesil tam"><%= edit ? 'Kaydet' : 'İlanı Yayınla' %></button>
+    <p class="kucuk">İlan vermek ücretsizdir. Yayınlayarak <a href="/kullanim-sartlari">Kullanım Şartları</a>'nı kabul etmiş olursunuz.</p>
+  </form>
+</div>
+<%- include('partials/foot') %>

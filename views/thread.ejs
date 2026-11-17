@@ -1,0 +1,19 @@
+<%- include('partials/head') %>
+<div class="sohbet">
+  <a class="sohbet-ilan" href="<%= ilanUrl(ilan) %>">
+    <span class="mini-gorsel" style="--r1:<%= getKategori(ilan.category).renk[0] %>;--r2:<%= getKategori(ilan.category).renk[1] %>"><% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt=""><% } else { %><%- getKategori(ilan.category).ikon %><% } %></span>
+    <span><strong><%= ilan.title %></strong><small><%= ilan.price != null ? fiyat(ilan.price) : 'Takaslık' %> · <%= other.name %></small></span>
+  </a>
+  <div class="mesajlar">
+    <% if (!msgs.length) { %><p class="kucuk merkez">Mesajın sadece <%= other.name %> tarafından görülür. Kibar ol, telefon/IBAN paylaşmadan önce emin ol. 🙂</p><% } %>
+    <% msgs.forEach(function (m, i) { %>
+      <div class="balon <%= m.sender_id === user.id ? 'benim' : '' %>" <%= i === msgs.length - 1 ? 'id=son' : '' %>><%= m.body %><small><%= tarihSaat(m.created_at) %></small></div>
+    <% }) %>
+  </div>
+  <form method="post" class="mesaj-yaz">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <textarea name="body" rows="2" required maxlength="2000" placeholder="<%= msgs.length ? 'Mesaj yaz...' : 'Merhaba, ilan hâlâ güncel mi?' %>"></textarea>
+    <button class="btn btn-yesil">Gönder</button>
+  </form>
+</div>
+<%- include('partials/foot') %>

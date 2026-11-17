@@ -1,0 +1,51 @@
+<%- include('partials/head') %>
+<section class="hero hero-turuncu">
+  <p class="hero-ust">📣 İŞLETMENİZ İÇİN REKLAM VERİN</p>
+  <h1>Mahallendeki müşterilere<br><span class="yesil">doğrudan ulaş.</span></h1>
+  <p class="hero-metin">Türkiye'nin 81 ilinde ve <%= iller.reduce(function (t, i) { return t + i.ilceler.length; }, 0) %> ilçesinde, her bölge için yalnızca <strong><%= SLOT_SAYISI %> reklam alanı</strong> var. İlçe reklamın, o ilçedeki ilan listesinde ve ilan sayfalarında; il geneli reklamın ise il sayfasında gösterilir.</p>
+  <div class="fiyat-kutular">
+    <div><strong>İlçe reklamı</strong><span><%= fiyatlar.ilce ? fiyat(fiyatlar.ilce) + ' / ay' : 'Teklif alın' %></span></div>
+    <div><strong>İl geneli reklam</strong><span><%= fiyatlar.il ? fiyat(fiyatlar.il) + ' / ay' : 'Teklif alın' %></span></div>
+    <div><strong>Toplam alan</strong><span><%= toplamAlan.toLocaleString('tr-TR') %></span></div>
+  </div>
+</section>
+
+<div class="form-sayfa">
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <form method="post" action="/reklam-ver" enctype="multipart/form-data" class="form kart-form" id="reklamForm">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">1. Reklamın görüneceği yer</h2>
+    <div class="iki-kolon">
+      <%- include('partials/location-select', { secIl: form.il, secIlce: form.ilce, ilBos: 'İl seçin', ilceBos: 'İl geneli (ilçe seçmeyin)', zorunlu: true, ilceOpsiyonel: true }) %>
+    </div>
+    <div class="alan-secim" id="alanSecim" data-secili="<%= form.slot %>">
+      <p class="kucuk">Alan durumunu görmek için il seçin.</p>
+    </div>
+    <noscript>
+      <label>Alan numarası<select name="slot"><% for (let i = 1; i <= SLOT_SAYISI; i++) { %><option <%= form.slot == i ? 'selected' : '' %>><%= i %></option><% } %></select></label>
+    </noscript>
+
+    <h2 class="form-baslik">2. İşletme bilgileri</h2>
+    <label>İşletme adı<input name="business_name" required maxlength="80" value="<%= form.business_name || '' %>" placeholder="Örn. Buca Lezzet Fırını"></label>
+    <label>Kısa tanıtım <small>(en fazla 200 karakter)</small><textarea name="description" rows="3" required minlength="10" maxlength="200" placeholder="Örn. Her sabah taze ekmek ve pastalar. Siparişe özel pasta."><%= form.description || '' %></textarea></label>
+    <div class="iki-kolon">
+      <label>Telefon<input type="tel" name="phone" value="<%= form.phone || '' %>" placeholder="0 5xx xxx xx xx"></label>
+      <label>Web sitesi / Instagram<input name="website" value="<%= form.website || '' %>" placeholder="ornek.com veya instagram.com/isletme"></label>
+    </div>
+    <label>Adres <small>(isteğe bağlı)</small><input name="address" maxlength="200" value="<%= form.address || '' %>"></label>
+    <label>Logo veya görsel <small>(isteğe bağlı, kare önerilir, en fazla 5 MB)</small><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>
+
+    <h2 class="form-baslik">3. Süre ve iletişim</h2>
+    <label>Süre
+      <select name="months"><% SURELER.forEach(function (m) { %><option value="<%= m %>" <%= form.months == m ? 'selected' : '' %>><%= m %> ay</option><% }) %></select>
+    </label>
+    <div class="iki-kolon">
+      <label>Yetkili adı<input name="contact_name" required value="<%= form.contact_name || '' %>"></label>
+      <label>E-posta<input type="email" name="contact_email" required value="<%= form.contact_email || '' %>"></label>
+    </div>
+    <label class="radio"><input type="checkbox" name="kvkk" value="1" required> <span>Reklam içeriğimin yasalara uygun olduğunu onaylıyor, <a href="/kvkk" target="_blank">KVKK Aydınlatma Metni</a>'ni kabul ediyorum.</span></label>
+    <button class="btn btn-turuncu tam">Başvuruyu Gönder</button>
+    <p class="kucuk">Başvurunuz incelendikten sonra size e-posta ile dönüş yapılır; ödeme ve onay sonrası reklamınız seçtiğiniz alanda yayına girer.</p>
+  </form>
+</div>
+<%- include('partials/foot') %>

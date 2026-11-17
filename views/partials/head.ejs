@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title ? title + ' | ' + SITE_NAME : SITE_NAME + ' – Komisyonsuz Takas Platformu' %></title>
+<meta name="description" content="<%= description || 'Havuç Takas: il ve ilçene göre ikinci el eşya ve takas ilanları. 0₺ komisyon, elden teslim.' %>">
+<meta name="theme-color" content="#16843f">
+<link rel="icon" href="/static/img/havuc.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/style.css?v=2">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a href="/" class="logo"><span class="logo-ikon">🥕</span> Havuç Takas</a>
+    <nav class="nav" id="nav">
+      <a href="/ilanlar" class="<%= path.startsWith('/ilanlar') || path.startsWith('/il/') ? 'aktif' : '' %>">İlanlar</a>
+      <% if (user) { %>
+        <a href="/mesajlar">Mesajlar<% if (unread) { %> <span class="rozet"><%= unread %></span><% } %></a>
+        <a href="/hesabim">Hesabım</a>
+        <% if (user.is_admin) { %><a href="/yonetim">Yönetim</a><% } %>
+        <form method="post" action="/cikis" class="nav-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Çıkış</button></form>
+      <% } else { %>
+        <a href="/giris">Giriş Yap</a>
+      <% } %>
+      <a href="/ilan-ver" class="btn btn-yesil nav-cta">+ İlan Ver</a>
+    </nav>
+    <button class="menu-btn" id="menuBtn" aria-label="Menü" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<main class="wrap sayfa">
+<% if (flash) { %><div class="flash flash-<%= flash.type %>" role="status"><%= flash.text %></div><% } %>

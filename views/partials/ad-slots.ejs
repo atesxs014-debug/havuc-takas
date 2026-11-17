@@ -1,0 +1,34 @@
+<%# reklamlar: [{slot, ad}] · reklamIl, reklamIlce: slug · reklamKonum: başlık %>
+<section class="reklamlar" aria-label="Yerel işletme reklamları">
+  <div class="bolum-bas">
+    <h2 class="bolum-baslik-k">📍 <%= reklamKonum %> yerel işletmeleri</h2>
+    <a class="kucuk-link" href="/reklam-ver?il=<%= reklamIl %>&ilce=<%= reklamIlce %>">Reklam ver →</a>
+  </div>
+  <div class="reklam-grid">
+    <% reklamlar.forEach(function (r) { const ad = r.ad; %>
+      <% if (ad) { %>
+        <article class="reklam">
+          <span class="reklam-etiket">Reklam</span>
+          <div class="reklam-ust">
+            <% if (ad.image) { %><img class="reklam-logo" src="/uploads/<%= ad.image %>" alt="<%= ad.business_name %>" loading="lazy">
+            <% } else { %><span class="reklam-logo harf"><%= ad.business_name.charAt(0).toLocaleUpperCase('tr') %></span><% } %>
+            <h3><%= ad.business_name %></h3>
+          </div>
+          <p><%= ad.description %></p>
+          <% if (ad.address) { %><p class="reklam-adres">📍 <%= ad.address %></p><% } %>
+          <div class="reklam-aksiyon">
+            <% if (ad.phone) { %><a class="btn btn-mini btn-yesil" href="tel:<%= ad.phone.replace(/[^\d+]/g, '') %>">📞 Ara</a><% } %>
+            <% if (ad.website) { %><a class="btn btn-mini btn-cizgi" href="/reklam/<%= ad.id %>/git" rel="nofollow sponsored noopener" target="_blank">Siteye git</a><% } %>
+          </div>
+        </article>
+      <% } else { %>
+        <a class="reklam reklam-bos" href="/reklam-ver?il=<%= reklamIl %>&ilce=<%= reklamIlce %>&alan=<%= r.slot %>">
+          <span class="reklam-no"><%= r.slot %></span>
+          <strong>Bu alan müsait</strong>
+          <span>İşletmenizi <%= reklamKonum %> bölgesindeki komşularınıza gösterin.</span>
+          <span class="reklam-cta">Reklam ver →</span>
+        </a>
+      <% } %>
+    <% }) %>
+  </div>
+</section>

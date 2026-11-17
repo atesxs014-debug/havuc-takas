@@ -1,0 +1,9 @@
+<%# secIl, secIlce, ilBos, ilceBos, zorunlu %>
+<select name="il" class="js-il" data-ilce-target="<%= typeof ilceId !== 'undefined' ? ilceId : '' %>" <%= typeof zorunlu !== 'undefined' && zorunlu ? 'required' : '' %> aria-label="İl">
+  <option value=""><%= ilBos %></option>
+  <% iller.forEach(function (il) { %><option value="<%= il.slug %>" <%= il.slug === secIl ? 'selected' : '' %>><%= il.ad %></option><% }) %>
+</select>
+<select name="ilce" class="js-ilce" <%= typeof ilceId !== 'undefined' ? 'id=' + ilceId : '' %> data-selected="<%= secIlce %>" data-bos="<%= ilceBos %>" <%= typeof zorunlu !== 'undefined' && zorunlu && !(typeof ilceOpsiyonel !== 'undefined' && ilceOpsiyonel) ? 'required' : '' %> aria-label="İlçe">
+  <option value=""><%= ilceBos %></option>
+  <% const _il = getIl(secIl); if (_il) _il.ilceler.forEach(function (i) { %><option value="<%= i.slug %>" <%= i.slug === secIlce ? 'selected' : '' %>><%= i.ad %></option><% }) %>
+</select>

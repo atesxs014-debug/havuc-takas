@@ -1,0 +1,52 @@
+<%- include('partials/head') %>
+<section class="hero">
+  <p class="hero-ust">🥕 HAVUÇ TAKAS'A HOŞ GELDİN</p>
+  <h1>Komşundan al, komşuna ver.<br><span class="yesil">0₺ komisyon.</span></h1>
+  <p class="hero-metin">İlini ve ilçeni seç, çevrendeki ikinci el eşya ve takas ilanlarını gör. Aracı yok, komisyon yok — sadece elden, güvenli teslimat.</p>
+  <form class="hero-filtre" action="/ilanlar" method="get">
+    <div class="select-ikili">
+      <%- include('partials/location-select', { secIl: '', secIlce: '', ilBos: 'Tüm Türkiye', ilceBos: 'Tüm İlçeler' }) %>
+    </div>
+    <button class="btn btn-yesil">Filtrele</button>
+  </form>
+</section>
+
+<section>
+  <div class="bolum-bas">
+    <h2 class="bolum-baslik">Son eklenen ilanlar</h2>
+    <a class="kucuk-link" href="/ilanlar">Tümünü Gör →</a>
+  </div>
+  <% if (ilanlar.length) { %>
+    <div class="grid"><% ilanlar.forEach(function (ilan) { %><%- include('partials/card', { ilan }) %><% }) %></div>
+  <% } else { %>
+    <div class="bos-durum"><p>Henüz ilan yok. İlk ilanı sen ver!</p><a class="btn btn-yesil" href="/ilan-ver">+ İlan Ver</a></div>
+  <% } %>
+</section>
+
+<section class="kategoriler">
+  <h2 class="bolum-baslik">Kategoriler</h2>
+  <div class="kategori-liste">
+    <% kategoriler.forEach(function (k) { %>
+      <a href="/ilanlar?kategori=<%= k.slug %>" class="kategori" style="--r1:<%= k.renk[0] %>;--r2:<%= k.renk[1] %>"><span class="kategori-ikon"><%- k.ikon %></span><%= k.ad %></a>
+    <% }) %>
+  </div>
+</section>
+
+<section class="isletme-cta">
+  <div>
+    <p class="hero-ust">📣 YEREL İŞLETMELER İÇİN</p>
+    <h2>Mahallendeki müşterilere ulaş</h2>
+    <p>81 il ve tüm ilçelerde, her bölge için yalnızca <strong>4 reklam alanı</strong> var. Toplam <%= toplamAlan.toLocaleString('tr-TR') %> alan; seninkini şimdi ayır.</p>
+  </div>
+  <div class="cta-butonlar">
+    <a class="btn btn-turuncu" href="/reklam-ver">İşletmeniz İçin Reklam Verin</a>
+    <a class="btn btn-cizgi" href="/reklam-alanlari">Boş alanları gör</a>
+  </div>
+</section>
+
+<section class="nasil">
+  <div><span>🔍</span><h3>Bul</h3><p>İlini ve ilçeni seç, yakınındaki ilanları gör.</p></div>
+  <div><span>💬</span><h3>Teklif Ver</h3><p>Satıcıya site içinden mesaj gönder, anlaş.</p></div>
+  <div><span>🤝</span><h3>Takas Yap</h3><p>Halka açık bir yerde buluş, elden teslim et. Komisyon yok.</p></div>
+</section>
+<%- include('partials/foot') %>
