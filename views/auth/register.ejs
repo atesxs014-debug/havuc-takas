@@ -4,10 +4,12 @@
   <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
   <form method="post" action="/kayit" class="form kart-form">
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+    <%- include('../partials/google-btn') %>
     <label>Ad Soyad<input name="name" required minlength="3" maxlength="80" autocomplete="name" value="<%= form.name || '' %>"></label>
-    <label>E-posta<input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
+    <label>E-posta <small>(doğrulama bağlantısı gönderilir)</small><input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
     <label>Telefon <small>(isteğe bağlı, ilanlarda gösterilmez)</small><input type="tel" name="phone" autocomplete="tel" value="<%= form.phone || '' %>"></label>
     <label>Şifre <small>(en az 8 karakter)</small><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Şifre (tekrar)<input type="password" name="password2" required minlength="8" autocomplete="new-password" data-ayni="password"></label>
     <label class="radio"><input type="checkbox" name="kvkk" value="1" required> <span><a href="/kullanim-sartlari" target="_blank">Kullanım Şartları</a>'nı ve <a href="/kvkk" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum, kabul ediyorum.</span></label>
     <%- include('../partials/turnstile') %>
     <button class="btn btn-yesil tam">Üye Ol</button>

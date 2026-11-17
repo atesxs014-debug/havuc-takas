@@ -1,19 +1,43 @@
 <%- include('partials/head') %>
 <h1 class="sayfa-baslik">Yönetim Paneli</h1>
 <nav class="sekmeler">
+  <a href="?tab=grafik" class="<%= tab === 'grafik' ? 'aktif' : '' %>">📊 İstatistikler</a>
   <a href="?tab=bekleyen" class="<%= tab === 'bekleyen' ? 'aktif' : '' %>">Reklam başvuruları <span class="rozet"><%= c.bekleyen %></span></a>
   <a href="?tab=aktif" class="<%= tab === 'aktif' ? 'aktif' : '' %>">Aktif reklamlar (<%= c.aktif %>)<% if (c.uzatma) { %> <span class="rozet"><%= c.uzatma %> uzatma</span><% } %></a>
   <a href="?tab=gecmis" class="<%= tab === 'gecmis' ? 'aktif' : '' %>">Geçmiş</a>
   <a href="?tab=onay" class="<%= tab === 'onay' ? 'aktif' : '' %>">Onay bekleyen ilanlar <span class="rozet"><%= c.onay %></span></a>
   <a href="?tab=sikayet" class="<%= tab === 'sikayet' ? 'aktif' : '' %>">Şikayetler <span class="rozet"><%= c.sikayet %></span></a>
+  <a href="?tab=iletisim" class="<%= tab === 'iletisim' ? 'aktif' : '' %>">📮 İletişim<% if (c.iletisim) { %> <span class="rozet"><%= c.iletisim %></span><% } %></a>
+  <a href="?tab=siparis" class="<%= tab === 'siparis' ? 'aktif' : '' %>">📦 Siparişler (<%= c.acik_siparis %> açık)<% if (c.itiraz) { %> <span class="rozet"><%= c.itiraz %> itiraz</span><% } %></a>
   <a href="?tab=ilan" class="<%= tab === 'ilan' ? 'aktif' : '' %>">İlanlar (<%= c.ilan %>)</a>
   <a href="?tab=uye" class="<%= tab === 'uye' ? 'aktif' : '' %>">Üyeler (<%= c.uye %>)</a>
   <a href="?tab=fiyatlar" class="<%= tab === 'fiyatlar' ? 'aktif' : '' %>">💰 Fiyatlar</a>
+  <a href="?tab=kargo" class="<%= tab === 'kargo' ? 'aktif' : '' %>">🚚 Kargo ve vitrin</a>
   <a href="?tab=kelimeler" class="<%= tab === 'kelimeler' ? 'aktif' : '' %>">🚫 Yasaklı kelimeler</a>
   <a href="?tab=yedek" class="<%= tab === 'yedek' ? 'aktif' : '' %>">💾 Yedekler</a>
 </nav>
 
-<% if (!rows.length && !['fiyatlar', 'kelimeler', 'yedek'].includes(tab)) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
+<% if (!rows.length && !['fiyatlar', 'kelimeler', 'yedek', 'kargo', 'uye', 'grafik'].includes(tab)) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
+
+<% if (tab === 'grafik') { %>
+  <p class="kucuk">Son <%= grafikGun %> günün günlük sayıları. Çubukların üzerine gelince o günün değeri görünür.</p>
+  <div class="yg-grafikler">
+    <% grafikler.forEach(function (g) { %>
+      <figure class="yg-grafik">
+        <figcaption><strong><%= g.ad %></strong><span><%= sayi(g.toplam) %><%= g.birim %></span><small>Son <%= grafikGun %> gün toplamı · en yoğun gün <%= sayi(g.max) %><%= g.birim %></small></figcaption>
+        <%- grafikSvg(g) %>
+      </figure>
+    <% }) %>
+  </div>
+  <details class="kucuk"><summary>Tablo olarak gör</summary>
+    <div class="tablo-kaydir"><table class="tutar-tablo">
+      <tr><th>Gün</th><% grafikler.forEach(function (g) { %><th><%= g.ad %></th><% }) %></tr>
+      <% grafikler[0].veri.slice().reverse().forEach(function (x, i) { const j = grafikler[0].veri.length - 1 - i; %>
+        <tr><td><%= x.g %></td><% grafikler.forEach(function (g) { %><td><%= sayi(g.veri[j].n) %></td><% }) %></tr>
+      <% }) %>
+    </table></div>
+  </details>
+<% } %>
 
 <% if (['bekleyen', 'aktif', 'gecmis'].includes(tab)) { %>
   <div class="admin-liste">
@@ -70,6 +94,50 @@
     </article>
   <% }) %>
   </div>
+<% } else if (tab === 'siparis') { %>
+  <p class="kucuk">Tamamlanan: <strong><%= ciro.n %></strong> sipariş · İşlem hacmi <strong><%= fiyat(ciro.hacim) %></strong> · Hizmet bedeli geliri <strong><%= fiyat(ciro.hizmet) %></strong> (ödeme kuruluşu kesintisi hariç)</p>
+  <div class="admin-liste">
+  <% rows.forEach(function (o) { %>
+    <article class="admin-kart">
+      <div class="admin-kart-bas">
+        <div><a href="/siparis/<%= o.code %>"><strong><%= o.code %> · <%= o.title %></strong></a>
+          <small><%= o.buyer %> → <%= o.seller %> · <%= fiyat(o.total) %> (hizmet <%= fiyat(o.service_fee) %>) · <%= o.provider %> · <%= tarih(o.created_at) %></small></div>
+        <span class="durum durum-<%= o.status %>"><%= DURUMLAR[o.status] %></span>
+      </div>
+      <% if (o.dispute_reason) { %><p>⚠️ <strong>İtiraz:</strong> <%= o.dispute_reason %></p><% } %>
+      <% if (o.carrier) { %><p class="kucuk">🚚 <%= o.carrier %> · <%= o.tracking_no %></p><% } %>
+      <% if (['odendi', 'kargoda', 'itiraz'].includes(o.status)) { %>
+        <form method="post" action="/yonetim/siparis/<%= o.id %>/aktar" class="admin-form">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <input name="note" placeholder="Not (taraflara iletilir)">
+          <button class="btn btn-mini btn-yesil" data-confirm="Ödeme satıcıya aktarılacak. Emin misin?">Satıcıya aktar</button>
+          <button class="btn btn-mini btn-cizgi kirmizi" formaction="/yonetim/siparis/<%= o.id %>/iade" data-confirm="Tutarın tamamı alıcıya iade edilecek. Emin misin?">Alıcıya iade et</button>
+        </form>
+      <% } %>
+    </article>
+  <% }) %>
+  </div>
+<% } else if (tab === 'kargo') { %>
+  <form method="post" action="/yonetim/kargo" class="kart-form form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <p class="kucuk">Ödeme sağlayıcısı: <strong><%= saglayici %></strong><%= saglayici === 'test' ? ' — gerçek para hareketi yok. .env dosyasına IYZICO_API_KEY ve IYZICO_SECRET_KEY girince iyzico kullanılır.' : '' %></p>
+    <h2 class="form-baslik">Kargo ücretleri (alıcı öder, satıcıya aktarılır)</h2>
+    <div class="iki-kolon">
+      <% PAKETLER.forEach(function (p) { %><label><%= p.ad %> <small>(<%= p.aciklama %>)</small><input name="kargo_<%= p.key %>" inputmode="numeric" value="<%= kargoAyar[p.key] %>"></label><% }) %>
+    </div>
+    <h2 class="form-baslik">Güvenli ödeme hizmet bedeli (alıcı öder, sitede kalır)</h2>
+    <div class="iki-kolon">
+      <label>Ürün fiyatının yüzdesi (%)<input name="hizmet_yuzde" inputmode="decimal" value="<%= kargoAyar.hizmetYuzde %>"></label>
+      <label>En az (TL)<input name="hizmet_min" inputmode="numeric" value="<%= kargoAyar.hizmetMin %>"></label>
+    </div>
+    <p class="kucuk">Elden teslim ilanlar 0₺ komisyonla devam eder; bu bedel sadece kargolu güvenli ödemede alınır. iyzico'nun işlem kesintisi bu bedelden karşılanır.</p>
+    <h2 class="form-baslik">⭐ Vitrin fiyatları (TL)</h2>
+    <p class="kucuk">Şu an vitrinde <strong><%= vitrinAktif %></strong> ilan var · Toplam <strong><%= vitrinCiro.n %></strong> vitrin satışı, <strong><%= fiyat(vitrinCiro.toplam) %></strong> gelir.</p>
+    <div class="iki-kolon">
+      <% vitrinAyar.forEach(function (p) { %><label><%= p.gun %> gün vitrin<input name="vitrin_<%= p.gun %>" inputmode="numeric" value="<%= p.fiyat %>"></label><% }) %>
+    </div>
+    <button class="btn btn-yesil">Kaydet</button>
+  </form>
 <% } else if (tab === 'fiyatlar') { %>
   <form method="post" action="/yonetim/fiyatlar" class="kart-form form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
@@ -122,11 +190,13 @@
   <div class="admin-liste">
   <% rows.forEach(function (r) { %>
     <article class="admin-kart">
-      <p><a href="/ilan/<%= r.lid %>"><strong><%= r.title %></strong></a> <small>(<%= r.lstatus %>) · <%= tarih(r.created_at) %></small></p>
+      <p><a href="/ilan/<%= r.lid %>"><strong><%= r.title %></strong></a> <small>(<%= r.lstatus %>) · <%= tarih(r.created_at) %> · İlan sahibi: <a href="/yonetim?tab=uye&q=<%= r.owner_id %>"><%= r.owner_name %></a><%= r.owner_banned ? ' 🚫' : '' %></small></p>
       <p><%= r.reason %></p>
       <div class="admin-form">
         <form method="post" action="/yonetim/ilan/<%= r.lid %>/durum"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="sikayet"><button name="status" value="removed" class="btn btn-mini btn-cizgi kirmizi">İlanı kaldır</button></form>
         <form method="post" action="/yonetim/sikayet/<%= r.id %>/kapat"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-cizgi">Şikayeti kapat</button></form>
+        <% if (!r.owner_banned) { %><form method="post" action="/yonetim/uye/<%= r.owner_id %>/engelle"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="/yonetim?tab=sikayet"><input type="hidden" name="reason" value="<%= r.reason.slice(0, 280) %>">
+          <button class="btn btn-mini btn-kirmizi" data-confirm="<%= r.owner_name %> kalıcı olarak engellensin mi? Tüm ilanları ve reklamları yayından kalkacak.">🚫 Sahibini kalıcı engelle</button></form><% } %>
       </div>
     </article>
   <% }) %>
@@ -142,11 +212,40 @@
     <% }) %></tbody>
   </table></div>
 <% } else if (tab === 'uye') { %>
+  <form method="get" class="uye-ara"><input type="hidden" name="tab" value="uye">
+    <input type="search" name="q" value="<%= uyeAra %>" placeholder="Ad, e-posta veya üye no ile ara" aria-label="Üye ara"><button class="btn btn-yesil btn-mini">Ara</button></form>
+  <% if (!rows.length) { %><div class="bos-durum"><p>Üye bulunamadı.</p></div><% } %>
   <div class="tablo-sar"><table class="tablo">
-    <thead><tr><th>#</th><th>Ad</th><th>E-posta</th><th>İlan</th><th>Kayıt</th></tr></thead>
+    <thead><tr><th>#</th><th>Ad</th><th>E-posta</th><th>İlan</th><th>Şikayet</th><th>Kayıt</th><th></th></tr></thead>
     <tbody><% rows.forEach(function (u) { %>
-      <tr><td><%= u.id %></td><td><a href="/uye/<%= u.id %>"><%= u.name %></a><%= u.is_admin ? ' (yönetici)' : '' %><%= u.email_verified ? ' ✅' : '' %></td><td><%= u.email %></td><td><%= u.ilan_sayisi %></td><td><%= tarih(u.created_at) %></td></tr>
+      <tr class="<%= u.banned_at ? 'engelli-satir' : '' %>"><td><%= u.id %></td>
+        <td><a href="/uye/<%= u.id %>"><%= u.name %></a><%= u.is_admin ? ' (yönetici)' : '' %><%= u.email_verified ? ' ✅' : '' %><%= u.google_id ? ' · G' : '' %>
+          <% if (u.banned_at) { %><br><small class="kirmizi-yazi">🚫 <%= tarih(u.banned_at) %> engellendi<%= u.ban_reason ? ': ' + u.ban_reason : '' %></small><% } %></td>
+        <td><%= u.email %></td><td><%= u.ilan_sayisi %></td><td><%= u.sikayet_sayisi || '' %></td><td><%= tarih(u.created_at) %></td>
+        <td>
+          <% if (u.banned_at) { %>
+            <form method="post" action="/yonetim/uye/<%= u.id %>/engel-kaldir"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-cizgi btn-mini" data-confirm="<%= u.name %> için engel kaldırılsın mı?">Engeli kaldır</button></form>
+          <% } else if (!u.is_admin && u.id !== user.id) { %>
+            <details class="engel-detay"><summary class="btn btn-cizgi btn-mini kirmizi">Engelle</summary>
+              <form method="post" action="/yonetim/uye/<%= u.id %>/engelle"><input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input name="reason" maxlength="300" placeholder="Neden (üyeye e-postayla bildirilir)">
+                <button class="btn btn-kirmizi btn-mini" data-confirm="<%= u.name %> kalıcı olarak engellensin mi? İlanları ve reklamları yayından kalkacak.">Kalıcı engelle</button></form></details>
+          <% } %>
+        </td></tr>
     <% }) %></tbody>
   </table></div>
+<% } else if (tab === 'iletisim') { %>
+  <div class="admin-liste">
+  <% rows.forEach(function (m) { %>
+    <article class="admin-kart <%= m.status === 'open' ? '' : 'soluk' %>">
+      <div class="admin-kart-bas"><div><strong><%= m.topic %></strong> <small>· <%= m.name %> · <a href="mailto:<%= m.email %>?subject=<%= encodeURIComponent('Re: ' + m.topic) %>"><%= m.email %></a> · <%= tarihSaat(m.created_at) %></small></div>
+        <span class="durum durum-<%= m.status === 'open' ? 'pending' : 'ended' %>"><%= m.status === 'open' ? 'Yeni' : 'Kapandı' %></span></div>
+      <p class="onceki-satir"><%= m.body %></p>
+      <% if (m.status === 'open') { %><div class="admin-islemler">
+        <a class="btn btn-yesil btn-mini" href="mailto:<%= m.email %>?subject=<%= encodeURIComponent('Re: ' + m.topic) %>">✉️ Yanıtla</a>
+        <form method="post" action="/yonetim/iletisim/<%= m.id %>/kapat"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-cizgi btn-mini">Kapat</button></form></div><% } %>
+    </article>
+  <% }) %>
+  </div>
 <% } %>
 <%- include('partials/foot') %>

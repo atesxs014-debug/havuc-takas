@@ -8,7 +8,7 @@
           <span class="avatar"><%= c.other.name.charAt(0).toLocaleUpperCase('tr') %></span>
           <span class="konusma-govde">
             <strong><%= c.other.name %></strong> <small>· <%= c.ilan.title %></small>
-            <span class="son-mesaj"><%= c.last.sender_id === user.id ? 'Sen: ' : '' %><%= c.last.body %></span>
+            <span class="son-mesaj"><%= c.last.sender_id === user.id ? 'Sen: ' : '' %><%= c.last.body || (c.last.image ? '📷 Fotoğraf' : '') %></span>
           </span>
           <span class="konusma-sag"><small><%= tarihSaat(c.last.created_at) %></small><% if (c.unread) { %><span class="rozet"><%= c.unread %></span><% } %></span>
         </a>

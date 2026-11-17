@@ -1,0 +1,14 @@
+<%- include('partials/head') %>
+<h1 class="sayfa-baslik">Engellediğim Kişiler</h1>
+<p class="kucuk">Engellediğin kişiler sana mesaj gönderemez, sen de onlara gönderemezsin.</p>
+<% if (liste.length) { %>
+  <ul class="arama-liste">
+    <% liste.forEach(function (b) { %>
+      <li><span><strong><%= b.name %></strong><small><%= tarih(b.created_at) %> tarihinde engellendi</small></span>
+        <form method="post" action="/engel/<%= b.id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="islem" value="kaldir"><input type="hidden" name="next" value="/hesabim/engellenenler"><button class="btn btn-cizgi btn-mini">Engeli kaldır</button></form></li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <div class="bos-durum"><p>Kimseyi engellemedin.</p></div>
+<% } %>
+<%- include('partials/foot') %>

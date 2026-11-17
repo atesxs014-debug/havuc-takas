@@ -1,0 +1,8 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa">
+  <h1 class="sayfa-baslik">Ödeme · <%= fiyat(o.total) %></h1>
+  <p class="kucuk">Kart bilgilerin doğrudan iyzico'ya iletilir, sitemizde saklanmaz.</p>
+  <div id="iyzipay-checkout-form" class="responsive"></div>
+  <%- html %>
+</div>
+<%- include('../partials/foot') %>

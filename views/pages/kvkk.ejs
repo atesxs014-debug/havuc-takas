@@ -1,17 +1,128 @@
 <%- include('../partials/head') %>
-<article class="metin">
+<% const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+   const eksik = (v, ne) => v ? esc(v) : `<span class="doldurulacak">[${ne} doldurulacak]</span>`;
+   const posta = (konu) => vs.eposta ? `<a href="mailto:${esc(vs.eposta)}${konu || ''}">${esc(vs.eposta)}</a>` : eksik('', 'E-posta'); %>
+<article class="metin kvkk">
 <h1>KVKK Aydınlatma Metni</h1>
-<p class="kucuk">Bu metin şablondur; yayına almadan önce bir hukuk danışmanına kontrol ettiriniz.</p>
-<p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, Havuç Takas ("Platform") olarak veri sorumlusu sıfatıyla kişisel verilerinizi aşağıda açıklanan kapsamda işlemekteyiz.</p>
-<h2>İşlenen kişisel veriler</h2>
-<ul><li>Kimlik ve iletişim: ad soyad, e-posta, (isteğe bağlı) telefon</li><li>İlan bilgileri: ilan içeriği, fotoğraflar, il/ilçe bilgisi</li><li>Mesajlaşma içerikleri</li><li>Reklam başvurularında işletme ve yetkili bilgileri</li><li>İşlem güvenliği: oturum çerezi, IP kayıtları</li></ul>
-<h2>İşleme amaçları</h2>
-<p>Üyelik oluşturma, ilan yayınlama, kullanıcılar arası iletişimin sağlanması, reklam hizmetinin sunulması, şikayetlerin incelenmesi, hukuki yükümlülüklerin yerine getirilmesi ve platform güvenliğinin sağlanması.</p>
-<h2>Hukuki sebep</h2>
-<p>KVKK m.5/2 kapsamında sözleşmenin kurulması ve ifası, hukuki yükümlülük ve meşru menfaat; gerekli hallerde açık rıza.</p>
-<h2>Aktarım</h2>
-<p>Kişisel verileriniz, yasal zorunluluklar ve barındırma/altyapı hizmet sağlayıcıları dışında üçüncü kişilerle paylaşılmaz.</p>
-<h2>Haklarınız</h2>
-<p>KVKK m.11 kapsamındaki haklarınız için bizimle iletişime geçebilirsiniz.</p>
+<p class="kucuk">Son güncelleme: 17 Kasım 2026 · Bu metin sitenin bugünkü işleyişine göre hazırlanmış bir şablondur; yayına almadan önce bir hukukçuya kontrol ettirin.</p>
+
+<p>Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") m.10 ve Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca, Havuç Takas ("Platform") kullanıcılarını, reklam verenlerini ve iletişim formunu kullanan kişileri kişisel verilerinin nasıl işlendiği konusunda bilgilendirmek için hazırlanmıştır.</p>
+
+<h2>1. Veri sorumlusu</h2>
+<ul>
+  <li><strong>Unvan / ad soyad:</strong> <%- eksik(vs.unvan, 'Unvan') %></li>
+  <li><strong>Adres:</strong> <%- eksik(vs.adres, 'Adres') %></li>
+  <li><strong>E-posta:</strong> <%- posta() %></li>
+  <% if (vs.kep) { %><li><strong>KEP adresi:</strong> <%= vs.kep %></li><% } %>
+  <li><strong>İnternet sitesi:</strong> <a href="<%= base %>"><%= base %></a></li>
+</ul>
+
+<h2>2. Platform nasıl çalışır, neden önemli?</h2>
+<p>Havuç Takas'ta üyelik ve ilan vermek <strong>ücretsizdir</strong>; kullanıcılar arasındaki alışverişten ve takastan <strong>komisyon alınmaz</strong>. Platformun geliri, il ve ilçe sayfalarında gösterilen <strong>yerel işletme reklamlarıdır</strong>. Bu reklamlar <strong>kişisel verilerinize göre hedeflenmez</strong>; yalnızca bakılan il/ilçe sayfasına göre gösterilir. Kişisel verileriniz reklam verenlerle paylaşılmaz, satılmaz, kiralanmaz ve profil çıkarmak için kullanılmaz.</p>
+<% if (ozellik.kargo || ozellik.vitrin) { %>
+<p>Bunlara ek olarak, kullanmayı seçerseniz <% if (ozellik.kargo) { %>kargolu güvenli ödeme<% } %><%= ozellik.kargo && ozellik.vitrin ? ' ve ' : '' %><% if (ozellik.vitrin) { %>ilanı öne çıkarma (vitrin)<% } %> hizmeti isteğe bağlı olarak sunulur. Bu hizmetlerde işlenen veriler aşağıda ayrıca belirtilmiştir.</p>
+<% } %>
+
+<h2>3. Hangi kişisel verilerinizi işliyoruz?</h2>
+<table class="kvkk-tablo">
+  <tr><th>Veri kategorisi</th><th>Örnekler</th></tr>
+  <tr><td>Kimlik</td><td>Ad soyad</td></tr>
+  <tr><td>İletişim</td><td>E-posta adresi; isteğe bağlı olarak telefon numarası</td></tr>
+  <tr><td>Müşteri işlem</td><td>İlanlarınız (başlık, açıklama, kategori, fiyat, ürün durumu, il/ilçe), favorileriniz, kayıtlı aramalarınız, teklifleriniz, verdiğiniz ve aldığınız puan ve yorumlar, bildirimleriniz, engellediğiniz kullanıcılar, şikayetleriniz, iletişim formu mesajlarınız</td></tr>
+  <tr><td>Görsel kayıt</td><td>İlan ve mesajlara yüklediğiniz fotoğraflar. Fotoğraflardaki konum (GPS) dahil tüm gömülü bilgiler yüklenirken otomatik silinir.</td></tr>
+  <tr><td>Kullanıcılar arası yazışmalar</td><td>Mesajlaşma içerikleri ve mesajda gönderilen fotoğraflar</td></tr>
+  <tr><td>İşlem güvenliği</td><td>Şifrenizin geri döndürülemez özeti (şifrenizin kendisi saklanmaz), IP adresi, oturum ve cihaz çerezleri, tarayıcı bilgisi (yeni cihaz uyarısı için), giriş denemeleri ve hesap kilidi kayıtları, e-posta doğrulama ve şifre sıfırlama bağlantı kayıtları</td></tr>
+  <tr><td>Bildirim aboneliği</td><td>"Telefona bildirim" açarsanız tarayıcınızın verdiği bildirim abonelik adresi ve anahtarları</td></tr>
+  <% if (ozellik.google) { %><tr><td>Google ile giriş</td><td>Google hesabınızın adı, e-posta adresi ve hesap kimliği. Google şifreniz bize iletilmez.</td></tr><% } %>
+  <tr><td>Reklam verenler</td><td>İşletme adı, yetkili adı, telefon, e-posta, adres, logo, reklam metni, ödeme referans kodu ve ödeme kayıtları; reklamın gösterim ve tıklanma sayıları (yalnızca toplam sayı, kişi bazında değil)</td></tr>
+  <% if (ozellik.kargo) { %><tr><td>Kargolu güvenli ödeme</td><td><strong>Alıcı:</strong> teslimat adı soyadı, telefonu ve adresi, sipariş ve ödeme kayıtları. <strong>Satıcı:</strong> ad soyad, telefon, adres, IBAN ve T.C. kimlik numarası (IBAN ve kimlik numarası şifrelenerek saklanır), kargo takip numarası. Kart bilgileriniz sitemizde işlenmez; doğrudan ödeme kuruluşunun sayfasında alınır.</td></tr><% } %>
+  <% if (ozellik.vitrin) { %><tr><td>Vitrin ödemeleri</td><td>Satın alınan vitrin paketi, tutar ve ödeme kayıtları (kart bilgisi hariç)</td></tr><% } %>
+</table>
+<p>Sağlık, din, etnik köken gibi <strong>özel nitelikli kişisel veri talep etmiyoruz</strong>. Lütfen ilan, mesaj ve fotoğraflarınızda bu tür verilere ve kimlik kartı gibi belgelere yer vermeyin.</p>
+
+<h2>4. Herkese açık olan bilgiler</h2>
+<p>İlanlarınız, ilanlarınızdaki fotoğraflar, adınız soyadınız, il/ilçeniz, üyelik tarihiniz, satıcı profiliniz ile aldığınız puan ve yorumlar Platform'u ziyaret eden herkes tarafından görülebilir ve arama motorlarında listelenebilir. <strong>E-posta adresiniz ve telefon numaranız ilanlarda ve profilde gösterilmez.</strong> Mesajlarınızı yalnızca konuşmanın tarafları görür.</p>
+
+<h2>5. Hangi amaçlarla ve hangi hukuki sebeplere dayanarak işliyoruz?</h2>
+<table class="kvkk-tablo">
+  <tr><th>Amaç</th><th>Hukuki sebep (KVKK m.5/2)</th></tr>
+  <tr><td>Üyelik oluşturma, giriş, ilan yayınlama, favori, kayıtlı arama, teklif ve mesajlaşma hizmetlerinin sunulması</td><td>Sözleşmenin kurulması ve ifası (c)</td></tr>
+  <tr><td>E-posta doğrulama, şifre sıfırlama, mesaj, teklif, ilan süresi ve fiyat düşüşü gibi hizmete ilişkin bildirimler</td><td>Sözleşmenin ifası (c)</td></tr>
+  <tr><td>Hesap güvenliği: yanlış şifrede geçici kilit, yeni cihazdan giriş uyarısı, deneme sınırı<%= ozellik.turnstile ? ', bot koruması' : '' %></td><td>Veri sorumlusunun meşru menfaati (f), hukuki yükümlülük (ç)</td></tr>
+  <tr><td>Yasaklı içerik ve dolandırıcılık incelemesi, şikayetlerin değerlendirilmesi, kurallara aykırı hesapların kapatılması</td><td>Meşru menfaat (f), hukuki yükümlülük (ç)</td></tr>
+  <tr><td>Yerel işletme reklamlarının alınması, yayınlanması, faturalandırılması</td><td>Sözleşmenin kurulması ve ifası (c), hukuki yükümlülük (ç)</td></tr>
+  <% if (ozellik.kargo) { %><tr><td>Kargolu satışta ödemenin alınması, satıcıya aktarılması, siparişin karşı tarafa bildirilmesi, iade ve itirazlar</td><td>Sözleşmenin ifası (c), hukuki yükümlülük (ç)</td></tr><% } %>
+  <tr><td>Yetkili kurum ve mahkemelerin talepleri, 5651 sayılı Kanun ve vergi mevzuatından doğan yükümlülükler</td><td>Kanunlarda açıkça öngörülmesi (a), hukuki yükümlülük (ç)</td></tr>
+  <tr><td>Uyuşmazlık hâlinde hakların korunması</td><td>Bir hakkın tesisi, kullanılması veya korunması (e)</td></tr>
+  <tr><td>Platform'un çalışmasını iyileştirmek için toplu, kimliksiz istatistikler<%= ozellik.analitik ? ' (çerezsiz ziyaret sayacı)' : '' %></td><td>Meşru menfaat (f)</td></tr>
+  <tr><td>Telefona/tarayıcıya anlık bildirim gönderilmesi</td><td>Bu özelliği kendiniz açtığınızda sözleşmenin ifası (c); istediğiniz an kapatabilirsiniz</td></tr>
+</table>
+<p>Kişisel verileriniz pazarlama, reklam hedefleme veya profilleme amacıyla işlenmez; bu nedenle açık rızanıza dayalı bir işleme yapılmamaktadır.</p>
+
+<h2>6. Verilerinizi nasıl topluyoruz?</h2>
+<p>Verileriniz; üyelik, ilan, mesaj, teklif, reklam başvurusu ve iletişim formları ile<%= ozellik.google ? ' Google ile giriş yaptığınızda Google üzerinden,' : '' %> siteyi kullanırken çerezler ve sunucu kayıtları aracılığıyla, elektronik ortamda otomatik ve kısmen otomatik yollarla toplanır.</p>
+
+<h2>7. Verilerinizi kimlere aktarıyoruz?</h2>
+<ul>
+  <li><strong>Diğer kullanıcılar:</strong> 4. maddede sayılan herkese açık bilgiler ile mesajlaştığınız kişiye gönderdiğiniz mesajlar<%= ozellik.kargo ? '; kargolu satışta teslimat için gerekli ad, telefon ve adres yalnızca siparişin karşı tarafına' : '' %>.</li>
+  <li><strong>Altyapı hizmet sağlayıcıları:</strong> sunucu barındırma ve yedekleme hizmeti sağlayıcısı; e-posta gönderim hizmeti sağlayıcısı<%= ozellik.turnstile ? '; bot koruması için Cloudflare (Turnstile)' : '' %><%= ozellik.analitik ? '; çerezsiz ziyaret istatistiği sağlayıcısı' : '' %>; anlık bildirimi açtıysanız tarayıcınızın bildirim servisi (ör. Google, Apple, Mozilla).</li>
+  <% if (ozellik.kargo || ozellik.vitrin) { %><li><strong>Ödeme kuruluşu:</strong> 6493 sayılı Kanun kapsamında lisanslı ödeme kuruluşu iyzico Ödeme Hizmetleri A.Ş.; ödemenin alınması, satıcıya aktarılması ve mevzuattan doğan kimlik doğrulama yükümlülükleri için.</li><% } %>
+  <% if (ozellik.google) { %><li><strong>Google:</strong> yalnızca Google ile giriş seçtiğinizde, kimliğinizin doğrulanması için.</li><% } %>
+  <li><strong>Yetkili kamu kurum ve kuruluşları, yargı mercileri:</strong> kanunen yetkili oldukları hâllerde ve talep ettikleri ölçüde.</li>
+</ul>
+<p>Reklam verenlere kullanıcıların kişisel verileri aktarılmaz.</p>
+
+<h2>8. Yurt dışına aktarım</h2>
+<p>Yukarıdaki hizmet sağlayıcılardan bazılarının sunucuları yurt dışında olabilir (ör. bot koruması, e-posta gönderimi, tarayıcı bildirim servisleri). Bu aktarımlar KVKK m.9 uyarınca, Kurul'un ilan ettiği standart sözleşmeler gibi uygun güvencelerden biri sağlanarak ve standart sözleşme imzalandığında 5 iş günü içinde Kurul'a bildirilerek yapılır.</p>
+
+<h2>9. Çerezler</h2>
+<ul>
+  <li><strong>Oturum çerezi (zorunlu):</strong> giriş yaptığınızı hatırlar. "Beni hatırla" seçiliyse 30 gün, seçili değilse tarayıcıyı kapatana kadar geçerlidir.</li>
+  <li><strong>Cihaz çerezi (zorunlu, güvenlik):</strong> hesabınıza yeni bir cihazdan giriş yapıldığını fark edip size haber verebilmek için kullanılır; 2 yıl saklanır.</li>
+  <% if (ozellik.turnstile) { %><li><strong>Bot koruması:</strong> Cloudflare Turnstile, formların bot tarafından doldurulmasını önlemek için gerekli teknik verileri işler.</li><% } %>
+</ul>
+<p>Reklam, takip veya pazarlama çerezi kullanılmaz. Zorunlu çerezler sözleşmenin ifası ve meşru menfaate dayanır; tarayıcınızdan silebilirsiniz ancak bu durumda giriş yapamazsınız.</p>
+
+<h2>10. Ne kadar süre saklıyoruz?</h2>
+<ul>
+  <li><strong>Hesap, ilan, mesaj ve teklifler:</strong> hesabınız açık olduğu sürece. Hesabınızı sildiğinizde bu veriler silinir.<% if (ozellik.kargo) { %> Kargolu sipariş kaydınız varsa, mevzuattan doğan saklama yükümlülükleri nedeniyle hesabınız silinmek yerine anonimleştirilir; sipariş kayıtları ilgili mevzuatta öngörülen süre (Türk Ticaret Kanunu ve vergi mevzuatı uyarınca 10 yıla kadar) boyunca saklanır.<% } %></li>
+  <li><strong>Bildirimler:</strong> 90 gün sonra otomatik silinir.</li>
+  <li><strong>Şifre sıfırlama, e-posta doğrulama ve e-posta değiştirme bağlantıları:</strong> 24–48 saat geçerlidir.</li>
+  <li><strong>Reklam ve ödeme kayıtları:</strong> vergi ve ticaret mevzuatı gereği 10 yıl.</li>
+  <li><strong>Erişim (trafik) kayıtları:</strong> 5651 sayılı Kanun ve ilgili yönetmelik uyarınca en az 1, en çok 2 yıl.</li>
+  <li><strong>Yedekler:</strong> günlük yedekler <%= ozellik.yedekGun %> gün sonra kendiliğinden silinir.</li>
+</ul>
+<p>Saklama süresi dolan veriler silinir, yok edilir veya anonim hâle getirilir.</p>
+
+<h2>11. Verilerinizi nasıl koruyoruz?</h2>
+<p>Şifreler geri döndürülemez biçimde (bcrypt) saklanır<%= ozellik.kargo ? '; IBAN ve kimlik numarası şifrelenir' : '' %>; bağlantılar HTTPS ile şifrelenir; art arda yanlış şifre denemesinde hesap geçici olarak kilitlenir; yeni cihazdan girişte e-posta ile uyarılırsınız; yönetim paneline yalnızca yetkili kişiler erişir.</p>
+
+<h2>12. KVKK m.11 kapsamındaki haklarınız</h2>
+<p>Veri sorumlusuna başvurarak:</p>
+<ul>
+  <li>kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme,</li>
+  <li>işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme,</li>
+  <li>yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme,</li>
+  <li>eksik veya yanlış işlenmişse düzeltilmesini isteme,</li>
+  <li>KVKK m.7'deki şartlar çerçevesinde silinmesini veya yok edilmesini isteme,</li>
+  <li>düzeltme, silme ve yok etme işlemlerinin verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme,</li>
+  <li>münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhinize bir sonuç çıkmasına itiraz etme,</li>
+  <li>kanuna aykırı işleme nedeniyle zarara uğramanız hâlinde zararın giderilmesini talep etme</li>
+</ul>
+<p>haklarına sahipsiniz.</p>
+<p><strong>Kendiniz hemen yapabilecekleriniz:</strong> bilgilerinizi <a href="/hesabim/ayarlar">Hesap Ayarları</a>'ndan düzeltebilir, verilerinizin bir kopyasını <a href="/hesabim/verilerim">Verilerimi indir</a> ile alabilir, hesabınızı <a href="/hesabim/sil">Hesabımı sil</a> ile kendiniz silebilirsiniz.</p>
+
+<h2>13. Nasıl başvurabilirsiniz?</h2>
+<p>Başvurunuzu Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ uyarınca;</p>
+<ul>
+  <li>yukarıdaki adrese yazılı olarak,</li>
+  <% if (vs.kep) { %><li>KEP adresimize (<%= vs.kep %>) güvenli elektronik imzalı olarak,</li><% } %>
+  <li>Platform'a kayıtlı e-posta adresinizden <%- posta('?subject=KVKK%20ba%C5%9Fvurusu') %> adresine,</li>
+  <li>ya da <a href="/iletisim?konu=KVKK%20başvurusu">iletişim formundan</a> "KVKK başvurusu" konusunu seçerek</li>
+</ul>
+<p>iletebilirsiniz. Başvurunuzda ad soyadınızı, Platform'a kayıtlı e-posta adresinizi ve talebinizi açıkça yazmanız gerekir. Başvurunuz en geç <strong>30 gün</strong> içinde ücretsiz sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi hâlinde Kurul'un belirlediği tarife uygulanabilir. Başvurunuzun reddedilmesi, cevabın yetersiz bulunması veya süresinde cevap verilmemesi hâlinde, cevabı öğrendiğiniz tarihten itibaren 30 gün ve her hâlde başvuru tarihinden itibaren 60 gün içinde Kişisel Verileri Koruma Kurulu'na şikayette bulunabilirsiniz.</p>
+
+<h2>14. Değişiklikler</h2>
+<p>Bu metin, Platform'un işleyişi veya mevzuat değiştiğinde güncellenir. Güncel metin her zaman bu sayfada yayımlanır.</p>
 </article>
 <%- include('../partials/foot') %>

@@ -1,0 +1,15 @@
+<%- include('partials/head') %>
+<div class="form-sayfa dar">
+  <h1 class="sayfa-baslik">İlanı yenile</h1>
+  <div class="kart-form">
+    <p><strong><%= ilan.title %></strong></p>
+    <p class="kucuk"><%= ilan.status === 'expired' ? 'Bu ilanın süresi doldu ve şu an yayında değil.' : 'Bu ilan ' + tarih(ilan.expires_at) + ' tarihine kadar yayında.' %>
+      Yenilersen bugünden itibaren <%= gun %> gün daha yayında kalır.</p>
+    <form method="post" action="/ilan/<%= ilan.id %>/yenile">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-yesil tam">🔄 <%= gun %> gün yenile</button>
+    </form>
+    <p class="kucuk merkez"><a href="<%= ilanUrl(ilan) %>">İlana dön</a></p>
+  </div>
+</div>
+<%- include('partials/foot') %>

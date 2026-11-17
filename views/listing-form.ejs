@@ -1,7 +1,9 @@
 <%- include('partials/head') %>
 <div class="form-sayfa">
   <h1 class="sayfa-baslik"><%= title %></h1>
-  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <% if (typeof error !== 'undefined' && error === 'KARGO_HESAP') { %>
+    <div class="flash flash-error">Kargoyla satış için önce <a href="/hesabim/odeme-bilgileri?next=<%= encodeURIComponent(path) %>">ödeme bilgilerini</a> (IBAN ve kimlik) girmelisin. İstersen kargo seçeneğini kapatıp ilanı şimdi yayınlayabilirsin.</div>
+  <% } else if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
   <form method="post" enctype="multipart/form-data" class="form kart-form"
         action="<%= edit ? "/ilan/" + form.id + "/duzenle" : "/ilan-ver" %>">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
@@ -12,13 +14,36 @@
         <% kategoriler.forEach(function (k) { %><option value="<%= k.slug %>" <%= form.category === k.slug ? 'selected' : '' %>><%= k.ad %></option><% }) %>
       </select>
     </label>
+    <label>Ürünün durumu
+      <select name="condition" required>
+        <option value="">Seçin</option>
+        <% DURUMLAR.forEach(function (d) { %><option value="<%= d[0] %>" <%= form.condition === d[0] ? 'selected' : '' %>><%= d[1] %></option><% }) %>
+      </select>
+    </label>
     <fieldset class="tur">
       <legend>İlan türü</legend>
       <label class="radio"><input type="radio" name="tur" value="satilik" <%= form.tur === 'satilik' ? 'checked' : '' %>> Satılık</label>
       <label class="radio"><input type="radio" name="tur" value="takas" <%= form.tur === 'takas' ? 'checked' : '' %>> Sadece takas</label>
       <label class="radio"><input type="radio" name="tur" value="ikisi" <%= form.tur === 'ikisi' ? 'checked' : '' %>> Satılık + takasa açık</label>
+      <label class="radio"><input type="radio" name="tur" value="bedava" <%= form.tur === 'bedava' ? 'checked' : '' %>> 🎁 Bedava (hediye)</label>
     </fieldset>
     <label class="js-fiyat">Fiyat (TL)<input name="price" inputmode="numeric" value="<%= form.price != null ? form.price : '' %>" placeholder="3500"></label>
+    <% if (kargoAcik) { %>
+      <fieldset class="kargo-secim js-kargo">
+        <legend>📦 Kargoyla satış <small class="kucuk">(isteğe bağlı)</small></legend>
+        <label class="radio"><input type="checkbox" name="shipping" value="1" <%= form.shipping ? 'checked' : '' %>> <span>Uzaktaki alıcılar da <strong>güvenli ödemeyle</strong> satın alabilsin. Para, alıcı ürünü teslim alınca sana geçer.</span></label>
+        <div class="kargo-detay">
+          <% if (!hesapHazir) { %><p class="kucuk">ℹ️ Bunun için bir kez <a href="/hesabim/odeme-bilgileri?next=<%= encodeURIComponent(path) %>" target="_blank">ödeme bilgilerini</a> girmen gerekiyor.</p><% } %>
+          <p class="kucuk">Paket boyu (kargo ücretini alıcı öder, ödemeyle birlikte sana aktarılır):</p>
+          <div class="paketler">
+            <% PAKETLER.forEach(function (p) { %>
+              <label class="paket"><input type="radio" name="package_size" value="<%= p.key %>" <%= (form.package_size || 'orta') === p.key ? 'checked' : '' %>>
+                <strong><%= p.ad %> · <%= fiyat(kargoAyar[p.key]) %></strong><small><%= p.aciklama %></small></label>
+            <% }) %>
+          </div>
+        </div>
+      </fieldset>
+    <% } %>
     <div class="iki-kolon">
       <%- include('partials/location-select', { secIl: form.il || '', secIlce: form.ilce || '', ilBos: 'İl seçin', ilceBos: 'İlçe seçin', zorunlu: true }) %>
     </div>

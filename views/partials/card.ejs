@@ -5,12 +5,16 @@
     <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi</span><% } %>
     <% if (ilan.status === 'pending') { %><span class="kart-etiket">⏳ İncelemede</span><% } %>
     <% if (ilan.status === 'rejected') { %><span class="kart-etiket">Yayınlanmadı</span><% } %>
+    <% if (ilan.status === 'expired') { %><span class="kart-etiket">⌛ Süresi doldu</span><% } %>
+    <% if (ilan.status === 'banned') { %><span class="kart-etiket">Yayında değil</span><% } %>
+    <% if (ilan.status === 'active' && ilan.featured_until && new Date(ilan.featured_until.replace(' ', 'T') + 'Z') > new Date()) { %><span class="vitrin-rozet">⭐ Vitrin</span><% } %>
     <% if (favs.has(ilan.id)) { %><span class="kart-fav" title="Favorilerinde">❤️</span><% } %>
   </div>
   <div class="kart-govde">
     <div class="rozetler">
-      <% if (ilan.price != null) { %><span class="fiyat-rozet"><%= fiyat(ilan.price) %></span><% } %>
+      <% if (ilan.price === 0) { %><span class="bedava-rozet">🎁 Bedava</span><% } else if (ilan.price != null) { %><span class="fiyat-rozet"><%= fiyat(ilan.price) %></span><% } %>
       <% if (ilan.is_swap) { %><span class="takas-rozet">Takaslık</span><% } %>
+      <% if (ilan.shipping && ilan.price > 0) { %><span class="kargo-rozet" title="Kargoyla güvenli satın alınabilir">📦 Kargo</span><% } %>
     </div>
     <h3 class="kart-baslik"><%= ilan.title %></h3>
     <p class="kart-alt"><%= ilan.views %> görüntülenme<% if (typeof konumGoster !== 'undefined' && konumGoster) { %> · <%= konumAdi(ilan.il, ilan.ilce) %><% } %></p>

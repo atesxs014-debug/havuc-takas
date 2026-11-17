@@ -4,15 +4,36 @@
   <form method="post" action="/hesabim/ayarlar" class="form kart-form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <label>Ad Soyad<input name="name" required minlength="3" maxlength="80" value="<%= user.name %>"></label>
-    <label>E-posta<input value="<%= user.email %>" disabled> <small><%= user.email_verified ? '✅ Doğrulandı' : '⚠️ Doğrulanmadı' %></small></label>
+    <label>E-posta<input value="<%= user.email %>" disabled> <small><%= user.email_verified ? '✅ Doğrulandı' : '⚠️ Doğrulanmadı' %><%= user.google_id ? ' · Google hesabına bağlı' : '' %> · <a href="#eposta">Değiştir</a></small></label>
     <label>Telefon <small>(isteğe bağlı, ilanlarda gösterilmez)</small><input type="tel" name="phone" value="<%= user.phone || '' %>"></label>
-    <label class="radio"><input type="checkbox" name="notify_email" value="1" <%= user.notify_email ? 'checked' : '' %>> Yeni mesaj gelince e-posta ile haber ver</label>
-    <h2 class="form-baslik">Şifre değiştir <small class="kucuk">(isteğe bağlı)</small></h2>
+    <label class="radio"><input type="checkbox" name="notify_email" value="1" <%= user.notify_email ? 'checked' : '' %>> Yeni mesaj ve kayıtlı aramalar için e-posta ile haber ver</label>
+    <h2 class="form-baslik"><%= user.no_password ? 'Şifre belirle' : 'Şifre değiştir' %> <small class="kucuk">(isteğe bağlı)</small></h2>
+    <% if (user.no_password) { %><p class="kucuk">Google ile giriş yapıyorsun. İstersen e-posta ve şifreyle de girebilmek için bir şifre belirle.</p><% } %>
     <div class="iki-kolon">
-      <label>Mevcut şifre<input type="password" name="password" autocomplete="current-password"></label>
+      <% if (!user.no_password) { %><label>Mevcut şifre<input type="password" name="password" autocomplete="current-password"></label><% } %>
       <label>Yeni şifre<input type="password" name="new_password" minlength="8" autocomplete="new-password"></label>
+      <label>Yeni şifre (tekrar)<input type="password" name="new_password2" minlength="8" autocomplete="new-password" data-ayni="new_password"></label>
     </div>
     <button class="btn btn-yesil tam">Kaydet</button>
   </form>
+  <form method="post" action="/hesabim/eposta" class="form kart-form tehlike-bolge" id="eposta">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">E-posta adresini değiştir</h2>
+    <p class="kucuk">Yeni adresine bir onay bağlantısı göndeririz. Bağlantıya tıklayınca adresin değişir; eski adresine de bilgi verilir.</p>
+    <div class="iki-kolon">
+      <label>Yeni e-posta<input type="email" name="new_email" required autocomplete="email"></label>
+      <% if (!user.no_password) { %><label>Şifren<input type="password" name="password" required autocomplete="current-password"></label><% } %>
+    </div>
+    <button class="btn btn-cizgi">Onay bağlantısı gönder</button>
+  </form>
+  <section class="kart-form tehlike-bolge">
+    <h2 class="form-baslik">Verilerin ve hesabın</h2>
+    <p class="kucuk">KVKK kapsamındaki haklarını buradan kullanabilirsin.</p>
+    <div class="tehlike-butonlar">
+      <a class="btn btn-cizgi" href="/hesabim/verilerim">⬇️ Verilerimi indir</a>
+      <a class="btn btn-cizgi" href="/hesabim/engellenenler">🚫 Engellediklerim</a>
+      <a class="btn btn-cizgi kirmizi" href="/hesabim/sil">Hesabımı sil</a>
+    </div>
+  </section>
 </div>
 <%- include('../partials/foot') %>

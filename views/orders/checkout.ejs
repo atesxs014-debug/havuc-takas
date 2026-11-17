@@ -1,0 +1,36 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa">
+  <h1 class="sayfa-baslik">Kargoyla Satın Al</h1>
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <div class="siparis-ozet">
+    <span class="mini-gorsel" style="--r1:<%= getKategori(ilan.category).renk[0] %>;--r2:<%= getKategori(ilan.category).renk[1] %>"><% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt=""><% } else { %><%- getKategori(ilan.category).ikon %><% } %></span>
+    <div><strong><%= ilan.title %></strong><small>Satıcı: <%= ilan.seller_name %> · <%= konumAdi(ilan.il, ilan.ilce) %></small></div>
+  </div>
+  <form method="post" class="form kart-form">
+    <% if (typeof teklif !== 'undefined' && teklif) { %><input type="hidden" name="teklif" value="<%= teklif.id %>"><% } %>
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">Teslimat adresi</h2>
+    <div class="iki-kolon">
+      <label>Ad soyad<input name="ship_name" required maxlength="80" value="<%= form.ship_name || '' %>" autocomplete="name"></label>
+      <label>Cep telefonu<input type="tel" name="ship_phone" required value="<%= form.ship_phone || '' %>" autocomplete="tel" placeholder="05xx xxx xx xx"></label>
+    </div>
+    <div class="iki-kolon"><%- include('../partials/location-select', { secIl: form.ship_il || '', secIlce: form.ship_ilce || '', ilBos: 'İl seçin', ilceBos: 'İlçe seçin', zorunlu: true }) %></div>
+    <label>Açık adres<textarea name="ship_address" rows="3" required maxlength="300" placeholder="Mahalle, cadde/sokak, bina no, daire no" autocomplete="street-address"><%= form.ship_address || '' %></textarea></label>
+
+    <h2 class="form-baslik">Ödeme özeti</h2>
+    <table class="tutar-tablo">
+      <tr><td>Ürün<% if (typeof teklif !== 'undefined' && teklif) { %> <small class="kucuk">(kabul edilen teklif)</small><% } %></td><td><%= fiyat(tutar.urun) %></td></tr>
+      <tr><td>Kargo</td><td><%= fiyat(tutar.kargo) %></td></tr>
+      <tr><td>Güvenli ödeme hizmet bedeli</td><td><%= fiyat(tutar.hizmet) %></td></tr>
+      <tr class="toplam"><td>Toplam</td><td><%= fiyat(tutar.toplam) %></td></tr>
+    </table>
+    <ul class="guvence">
+      <li>🔒 Paran, ürünü teslim alıp "Teslim aldım" diyene kadar ödeme kuruluşunda bekler.</li>
+      <li>🚚 Satıcı 3 gün içinde kargoya vermezse paranın tamamı otomatik iade edilir.</li>
+      <li>⚠️ Ürün tarif edildiği gibi değilse teslimattan sonraki 7 gün içinde "Sorun var" diyebilirsin.</li>
+    </ul>
+    <label class="radio"><input type="checkbox" name="onay" value="1" required> <span><a href="/kullanim-sartlari#kargo" target="_blank">Kargolu satış koşullarını</a> ve <a href="/kvkk" target="_blank">KVKK metnini</a> okudum; adresimin satıcıyla paylaşılmasını kabul ediyorum.</span></label>
+    <button class="btn btn-turuncu tam">Ödemeye geç · <%= fiyat(tutar.toplam) %></button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

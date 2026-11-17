@@ -1,0 +1,21 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa">
+  <h1 class="sayfa-baslik">Ödeme Bilgilerim</h1>
+  <p class="kucuk">Kargoyla sattığın ürünlerin parası, alıcı ürünü teslim aldıktan sonra bu IBAN'a aktarılır. Bilgilerin lisanslı ödeme kuruluşuna (iyzico) iletilir; sitede şifreli saklanır ve kimseyle paylaşılmaz.</p>
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <% if (acc) { %><div class="flash flash-success">✅ Kayıtlı IBAN: •••• <%= acc.iban_last4 %>. Değiştirmek istemiyorsan IBAN ve TC kimlik alanlarını boş bırakabilirsin.</div><% } %>
+  <form method="post" action="/hesabim/odeme-bilgileri" class="form kart-form" autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+    <div class="iki-kolon">
+      <label>Ad<input name="first_name" required maxlength="50" value="<%= form.first_name || '' %>"></label>
+      <label>Soyad<input name="last_name" required maxlength="50" value="<%= form.last_name || '' %>"></label>
+    </div>
+    <label>Cep telefonu<input type="tel" name="phone" required value="<%= form.phone || '' %>" placeholder="05xx xxx xx xx"></label>
+    <label>Açık adres<textarea name="address" rows="2" required maxlength="250"><%= form.address || '' %></textarea></label>
+    <label>IBAN <small>(hesap senin adına olmalı)</small><input name="iban" <%= acc ? '' : 'required' %> inputmode="text" placeholder="TR00 0000 0000 0000 0000 0000 00" autocomplete="off"></label>
+    <label>TC kimlik no <small>(ödeme kuruluşu yasal olarak istiyor)</small><input name="tckn" <%= acc ? '' : 'required' %> inputmode="numeric" maxlength="11" autocomplete="off"></label>
+    <label class="radio"><input type="checkbox" name="onay" value="1" required> <span>Bilgilerimin ödeme hizmeti için iyzico'ya aktarılmasını ve <a href="/kullanim-sartlari#kargo" target="_blank">kargolu satış koşullarını</a> kabul ediyorum.</span></label>
+    <button class="btn btn-yesil tam">Kaydet</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

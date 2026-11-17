@@ -1,0 +1,13 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa dar">
+  <div class="flash flash-info">🧪 <strong>Test modu.</strong> Gerçek ödeme alınmaz. iyzico anahtarlarını .env dosyasına girdiğinde bu sayfa yerine iyzico'nun kart formu açılır.</div>
+  <h1 class="sayfa-baslik">Ödeme · <%= fiyat(o.total) %></h1>
+  <form method="post" class="form kart-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Kart numarası<input value="5528 7900 0000 0008" disabled></label>
+    <div class="iki-kolon"><label>Son kullanma<input value="12/30" disabled></label><label>CVC<input value="123" disabled></label></div>
+    <button class="btn btn-yesil tam" name="sonuc" value="basarili">Ödemeyi tamamla (test)</button>
+    <button class="btn btn-cizgi tam" name="sonuc" value="basarisiz">Başarısız ödeme dene</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>
