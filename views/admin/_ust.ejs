@@ -1,0 +1,101 @@
+<%
+const I = {
+  ozet: '<rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/>',
+  grafik: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+  kayit: '<path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/>',
+  bekleyen: '<path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/>',
+  aktif: '<path d="M3 11l18-8-8 18-2-8z"/>',
+  gecmis: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  alanlar: '<path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+  fiyatlar: '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+  onay: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  sikayet: '<path d="M4 21V4h11l1 2h4v9h-6l-1-2H4"/>',
+  iletisim: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  kelimeler: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+  ilan: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  uye: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+  siparis: '<path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  kargo: '<path d="M1 6h13v10H1zM14 10h4l3 3v3h-7"/><circle cx="5.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/>',
+  yedek: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  sistem: '<path d="M22 12h-4l-3 8-6-16-3 8H2"/>',
+  ara: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  gunes: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  ay: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  disari: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  indir: '<path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/>',
+};
+const ikon = (k, cls) => `<svg class="ikon ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${I[k] || ''}</svg>`;
+const GRUPLAR = [
+  ['Genel', [['ozet', 'Özet'], ['grafik', 'İstatistikler'], ['kayit', 'İşlem kaydı']]],
+  ['Reklamlar', [['bekleyen', 'Başvurular', c.bekleyen], ['aktif', 'Yayındaki reklamlar', c.uzatma ? c.uzatma : 0, c.aktif], ['gecmis', 'Geçmiş'], ['alanlar', 'Alan doluluğu'], ['fiyatlar', 'Fiyatlar']]],
+  ['Moderasyon', [['onay', 'İlan onayı', c.onay], ['sikayet', 'Şikayetler', c.sikayet], ['iletisim', 'İletişim', c.iletisim], ['kelimeler', 'Yasaklı kelimeler']]],
+  ['Kayıtlar', [['ilan', 'İlanlar', 0, c.ilan], ['uye', 'Üyeler', 0, c.uye], ['siparis', 'Siparişler', c.itiraz, c.acik_siparis]]],
+  ['Sistem', [['kargo', 'Kargo'], ['yedek', 'Yedekler'], ['sistem', 'Sistem durumu']]],
+];
+const AD = {}; GRUPLAR.forEach(function (g) { g[1].forEach(function (x) { AD[x[0]] = x[1]; }); });
+const bekleyenIs = c.bekleyen + c.onay + c.sikayet + c.iletisim + c.itiraz;
+%><!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= AD[tab] %> · Yönetim · <%= SITE_NAME %></title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b1410">
+<link rel="icon" href="/static/img/havuc.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/style.css?v=<%= assetV %>">
+<link rel="stylesheet" href="/static/css/admin.css?v=<%= assetV %>">
+<script src="/static/js/admin.js?v=<%= assetV %>"></script>
+</head>
+<body class="yp" data-sekme="<%= tab %>">
+<div class="yp-arka" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+
+<aside class="yp-yan cam" id="ypYan" aria-label="Yönetim menüsü">
+  <a href="/yonetim" class="yp-logo"><span class="yp-logo-ikon">🥕</span><span><strong>Havuç</strong> Yönetim</span></a>
+  <nav class="yp-nav">
+    <% GRUPLAR.forEach(function (g) { %>
+      <div class="yp-grup"><%= g[0] %></div>
+      <% g[1].forEach(function (x) { %>
+        <a href="/yonetim?tab=<%= x[0] %>" class="yp-link<%= tab === x[0] ? ' aktif' : '' %>" data-komut="<%= x[1] %>" <%= tab === x[0] ? 'aria-current=page' : '' %>>
+          <%- ikon(x[0]) %><span><%= x[1] %></span>
+          <% if (x[2]) { %><b class="yp-rozet"><%= x[2] %></b><% } else if (x[3] != null) { %><small class="yp-sayi"><%= x[3] %></small><% } %>
+        </a>
+      <% }) %>
+    <% }) %>
+  </nav>
+  <div class="yp-yan-alt">
+    <a href="/" class="yp-link"><%- ikon('disari') %><span>Siteye dön</span></a>
+  </div>
+</aside>
+<div class="yp-perde" id="ypPerde" hidden></div>
+
+<div class="yp-ana">
+  <header class="yp-ust cam">
+    <button class="yp-ikon-btn yp-menu-btn" id="ypMenu" aria-label="Menüyü aç" aria-controls="ypYan" aria-expanded="false"><%- ikon('menu') %></button>
+    <div class="yp-baslik">
+      <small>Yönetim paneli</small>
+      <h1><%= AD[tab] %></h1>
+    </div>
+    <button class="yp-ara-btn" id="ypAraBtn" type="button" aria-label="Hızlı geçiş (Ctrl+K)">
+      <%- ikon('ara') %><span>Ara veya git…</span><kbd>Ctrl K</kbd>
+    </button>
+    <% if (bekleyenIs) { %><a class="yp-is" href="/yonetim?tab=ozet" title="Bekleyen işler"><b><%= bekleyenIs %></b> iş bekliyor</a><% } %>
+    <button class="yp-ikon-btn" id="ypTema" type="button" aria-label="Açık/koyu tema"><%- ikon('gunes', 'tema-gunes') %><%- ikon('ay', 'tema-ay') %></button>
+    <div class="yp-kim" title="<%= user.email %>"><span><%= (user.name || '?').trim().charAt(0).toUpperCase() %></span></div>
+  </header>
+
+  <dialog class="yp-palet cam" id="ypPalet" aria-label="Hızlı geçiş">
+    <div class="yp-palet-ara"><%- ikon('ara') %><input id="ypPaletGiris" type="text" placeholder="Sayfa ya da işlem ara…" autocomplete="off" aria-label="Ara"></div>
+    <ul id="ypPaletListe" role="listbox">
+      <% GRUPLAR.forEach(function (g) { g[1].forEach(function (x) { %><li role="option" data-git="/yonetim?tab=<%= x[0] %>"><%- ikon(x[0]) %><span><%= x[1] %></span><small><%= g[0] %></small></li><% }) }) %>
+      <li role="option" data-git="/yonetim/disa-aktar/uyeler"><%- ikon('indir') %><span>Üyeleri dışa aktar (Excel)</span><small>Dışa aktar</small></li>
+      <li role="option" data-git="/yonetim/disa-aktar/ilanlar"><%- ikon('indir') %><span>İlanları dışa aktar (Excel)</span><small>Dışa aktar</small></li>
+      <li role="option" data-git="/yonetim/disa-aktar/reklamlar"><%- ikon('indir') %><span>Reklamları dışa aktar (Excel)</span><small>Dışa aktar</small></li>
+      <li role="option" data-git="/"><%- ikon('disari') %><span>Siteye dön</span><small>Site</small></li>
+    </ul>
+    <p class="yp-palet-ipucu"><kbd>↑</kbd><kbd>↓</kbd> seç · <kbd>Enter</kbd> git · <kbd>Esc</kbd> kapat</p>
+  </dialog>
+
+  <main class="yp-icerik">
+    <% if (flash) { %><div class="flash flash-<%= flash.type %> cam" role="status"><%= flash.text %></div><% } %>
