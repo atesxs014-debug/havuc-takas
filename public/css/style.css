@@ -402,12 +402,6 @@ code { background: var(--zemin); padding: 1px 6px; border-radius: 4px; font-size
 .kargo-secim legend { font-weight: 600; font-size: 14px; padding: 0 4px; }
 .kargo-detay { margin-top: 8px; }
 .kargo-secim:not(:has(input[name=shipping]:checked)) .kargo-detay { display: none; }
-.paketler { display: grid; grid-template-columns: 1fr; gap: 8px; }
-@media (min-width: 600px) { .paketler { grid-template-columns: repeat(3, 1fr); } }
-.paket { border: 2px solid var(--cizgi); border-radius: 10px; padding: 8px 10px; cursor: pointer; flex-direction: column !important; gap: 2px !important; position: relative; }
-.paket input { position: absolute; opacity: 0; }
-.paket small { font-weight: 400; color: var(--soluk); }
-.paket:has(input:checked) { border-color: var(--yesil); background: #effaf3; }
 .kargo-kutu { border: 2px solid #fbd7b3; background: #fff8f1; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
 .kargo-kutu p { margin: 0; }
 .siparis-ozet { display: flex; gap: 12px; align-items: center; background: #fff; border-radius: var(--r); box-shadow: var(--golge); padding: 12px; margin-bottom: 14px; }

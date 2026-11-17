@@ -222,7 +222,7 @@ async function savePhotos(listingId, files, startSort) {
 function kargoBilgi(req) {
   const orders = require('../lib/orders');
   const acc = db.prepare('SELECT sub_merchant_key FROM payout_accounts WHERE user_id = ?').get(req.user.id);
-  return { kargoAcik: require('../lib/payments').kargoAcik(), hesapHazir: !!(acc && acc.sub_merchant_key), PAKETLER: orders.PAKETLER, kargoAyar: orders.ayarlar(), DURUMLAR };
+  return { kargoAcik: require('../lib/payments').kargoAcik(), hesapHazir: !!(acc && acc.sub_merchant_key), DURUMLAR };
 }
 
 const insImage = db.prepare('INSERT INTO listing_images (listing_id, file, thumb, sort) VALUES (?, ?, ?, ?)');
