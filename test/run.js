@@ -29,7 +29,7 @@ const bekle = (port, ms = 15000) => new Promise((resolve, reject) => {
     const ilk = fs.readFileSync(path.join(__dirname, f), 'utf8').split('\n')[0];
     const ekEnv = ilk.startsWith('// env:') ? JSON.parse(ilk.slice(7)) : {};
     const env = {
-      ...process.env, NODE_ENV: 'test', PORT: String(port), BASE_URL: `http://localhost:${port}`,
+      ...process.env, NODE_ENV: 'test', PORT: String(port), EK_PORTLAR: '', BASE_URL: `http://localhost:${port}`,
       DB_PATH: path.join(dir, 'havuc.db'), UPLOAD_DIR: path.join(dir, 'uploads'), BACKUP_DISABLED: '1',
       SESSION_SECRET: 'test-secret-' + i, KARGO_TEST_MODE: '1', ...ekEnv,
     };
