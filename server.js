@@ -131,6 +131,11 @@ if (require.main === module) {
     if (!config.turnstile) console.log('ℹ️  Turnstile anahtarı yok: bot doğrulaması kapalı (deneme sınırı açık).');
     console.log('   Durdurmak için Ctrl+C\n');
   });
+  // Ek portlar (ör. 4848): biri doluysa site ana portta çalışmaya devam eder
+  for (const p of config.EK_PORTLAR) {
+    const ek = app.listen(p, () => console.log(`🥕 Ayrıca: http://localhost:${p}`));
+    ek.on('error', (e) => console.log(`⚠️  ${p} portu açılamadı (${e.code === 'EADDRINUSE' ? 'başka bir program kullanıyor' : e.code}); site ${config.PORT} portunda çalışıyor.`));
+  }
 }
 
 module.exports = app;

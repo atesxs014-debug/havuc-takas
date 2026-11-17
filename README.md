@@ -7,7 +7,7 @@ Yeni özellik: **her il ve her ilçe için 4 yerel işletme reklam alanı** (81 
 
 1. [Node.js](https://nodejs.org/tr/download) **LTS** sürümünü kur (22 veya üstü).
 2. Klasördeki **`baslat.bat`** (Windows) veya **`baslat.command`** (Mac) dosyasına çift tıkla.
-   İlk açılışta gerekli paketler kurulur ve örnek ilanlar eklenir, ardından tarayıcıda `http://localhost:3000` açılır.
+   İlk açılışta gerekli paketler kurulur ve örnek ilanlar eklenir, ardından tarayıcıda `http://localhost:3000` açılır. Site aynı anda `http://localhost:4848` adresinden de açılır (`.env` → `EK_PORTLAR`).
 3. Siteye ilk **üye olan kişi yönetici** olur. Yönetim paneli: `/yonetim`.
 
 Terminalden: `npm install` → `npm run seed` (isteğe bağlı) → `npm start`
