@@ -315,3 +315,73 @@ html[data-tema="acik"] .yp-cubuk { background: rgba(17, 32, 26, .08); }
 .yp-link { padding: 7px 12px; }
 .yp-grup { padding: 12px 12px 4px; }
 .yp .tablo th:first-child:has(input), .yp .tablo td:first-child:has(input) { width: 1%; padding-right: 4px; }
+
+/* ---- Sakin renkler: göz yormayan, düşük doygunluk ---- */
+.yp {
+  --yp-zemin: #0f1412;
+  --yp-metin: #e4ebe7;
+  --yp-soluk: rgba(220, 230, 225, .56);
+  --cam-bg: linear-gradient(135deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .025));
+  --cam-kenar: rgba(255, 255, 255, .09);
+  --cam-parlak: rgba(255, 255, 255, .14);
+  --cam-golge: 0 8px 30px -10px rgba(0, 0, 0, .5);
+  --vurgu: #e0915c;
+  --vurgu-2: #8fcfaa;
+  --vurgu-yumusak: rgba(224, 145, 92, .12);
+  --yesil-koyu: #5aa97f; --yesil-acik: rgba(143, 207, 170, .12);
+  --blob-op: .13;
+}
+html[data-tema="acik"] .yp {
+  --yp-zemin: #f2f4f3;
+  --yp-metin: #1d2622;
+  --yp-soluk: rgba(29, 38, 34, .58);
+  --cam-bg: linear-gradient(135deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, .62));
+  --cam-kenar: rgba(29, 38, 34, .07);
+  --cam-parlak: rgba(255, 255, 255, .9);
+  --cam-golge: 0 6px 24px -10px rgba(29, 38, 34, .16);
+  --vurgu: #c26a35; --vurgu-2: #2a7550; --yesil-koyu: #22603f;
+  --vurgu-yumusak: rgba(194, 106, 53, .1);
+  --blob-op: .16;
+}
+.yp-arka i { filter: blur(120px); }
+.yp-arka .b1 { background: radial-gradient(circle, #b9733f, transparent 70%); }
+.yp-arka .b2 { background: radial-gradient(circle, #3d7a5c, transparent 70%); }
+.yp-arka .b3 { background: radial-gradient(circle, #3e5f7d, transparent 70%); }
+.yp-arka .b4 { display: none; }
+.yp .cam::before { opacity: .45; }
+
+.yp-link.aktif { background: rgba(224, 145, 92, .13); box-shadow: inset 0 0 0 1px rgba(224, 145, 92, .22); }
+html[data-tema="acik"] .yp-link.aktif { background: rgba(194, 106, 53, .1); }
+html[data-tema="acik"] .yp-link:hover { background: rgba(29, 38, 34, .05); }
+.yp-link:hover { background: rgba(255, 255, 255, .045); }
+.yp-rozet { background: #b8683a; box-shadow: none; }
+.yp-logo-ikon { background: rgba(224, 145, 92, .16); box-shadow: none; }
+.yp-kim span { background: #9a5a34; box-shadow: none; }
+.yp-is { background: var(--vurgu-yumusak); border-color: rgba(224, 145, 92, .25); }
+.yp-palet li.secili { background: rgba(224, 145, 92, .14); }
+
+.yp .btn-yesil { color: #fff; background: #3f8f66; box-shadow: none; }
+.yp .btn-yesil:hover { background: #47a073; filter: none; }
+html[data-tema="acik"] .yp .btn-yesil { background: #2f7a55; }
+.yp .btn-kirmizi { background: #b5484a; box-shadow: none; }
+.yp .kirmizi { color: #e08a8a !important; }
+
+.yp-cubuk b { background: #c98250; box-shadow: none; }
+.nokta.turuncu, .nokta.mavi, .nokta.kirmizi, .nokta.mor, .nokta.yesil { box-shadow: none; }
+.nokta.turuncu { background: #d08a57; } .nokta.mavi { background: #6f9cc4; } .nokta.kirmizi { background: #c97272; }
+.nokta.mor { background: #9a88c4; } .nokta.yesil { background: #6fae8a; }
+.yp .yg-grafik .cubuk { fill: #c98250; }
+.yp .yg-grafik g:hover .cubuk { fill: #e0a172; }
+
+.yp .durum-pending, .yp .durum-odendi { background: rgba(224, 145, 92, .12); color: #e3a87f; border-color: rgba(224, 145, 92, .22); }
+.yp .durum-active, .yp .durum-tamamlandi, .yp .durum-sold { background: rgba(143, 207, 170, .1); color: #9fd2b4; border-color: rgba(143, 207, 170, .2); }
+.yp .durum-rejected, .yp .durum-removed, .yp .durum-itiraz, .yp .durum-iade { background: rgba(201, 114, 114, .12); color: #e0a0a0; border-color: rgba(201, 114, 114, .22); }
+.yp .durum-kargoda { background: rgba(111, 156, 196, .12); color: #a8c6e0; border-color: rgba(111, 156, 196, .22); }
+.yp .flash-success { background: rgba(143, 207, 170, .1); border-color: rgba(143, 207, 170, .22); }
+.yp .flash-error { background: rgba(201, 114, 114, .12); border-color: rgba(201, 114, 114, .25); }
+.yp .flash-info { background: rgba(111, 156, 196, .1); border-color: rgba(111, 156, 196, .22); }
+.yp-kontrol .tamam i { background: rgba(143, 207, 170, .14); color: #9fd2b4; }
+.yp-kontrol .uyari i { background: rgba(224, 170, 92, .15); color: #e0b47a; }
+.yp-avatar { background: #3f7a5c; box-shadow: none; }
+a.yp-kpi:hover { box-shadow: inset 0 1px 0 var(--cam-parlak), 0 12px 30px -14px rgba(0, 0, 0, .5); }
+.yp input:focus, .yp select:focus, .yp textarea:focus { border-color: rgba(224, 145, 92, .5); box-shadow: 0 0 0 3px rgba(224, 145, 92, .12); }
