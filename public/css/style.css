@@ -431,3 +431,11 @@ code { background: var(--zemin); padding: 1px 6px; border-radius: 4px; font-size
 .durum-itiraz { background: var(--turuncu-acik); color: #8a4100; }
 .durum-tamamlandi { background: var(--yesil-acik); color: var(--yesil-koyu); }
 .durum-iade, .durum-iptal { background: #f1f1f1; color: var(--soluk); }
+
+/* Şifre göster + beni hatırla */
+.sifre-kutu { position: relative; display: block; }
+.sifre-kutu input { width: 100%; padding-right: 72px; }
+.sifre-goster { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--yesil); font-weight: 600; font-size: 13px; padding: 6px 8px; cursor: pointer; border-radius: 6px; }
+.sifre-goster:hover { background: var(--yesil-acik); }
+.giris-alt { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.giris-alt label.radio { margin: 0; }

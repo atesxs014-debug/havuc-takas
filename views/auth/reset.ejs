@@ -5,6 +5,7 @@
   <form method="post" action="/sifre-sifirla/<%= token %>" class="form kart-form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <label>Yeni şifre <small>(en az 8 karakter)</small><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Yeni şifre (tekrar)<input type="password" name="password2" required minlength="8" autocomplete="new-password" data-ayni="password"></label>
     <button class="btn btn-yesil tam">Şifremi güncelle</button>
   </form>
 </div>

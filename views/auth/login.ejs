@@ -6,7 +6,10 @@
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
     <label>E-posta<input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
     <label>Şifre<input type="password" name="password" required autocomplete="current-password"></label>
-    <p class="kucuk sag"><a href="/sifremi-unuttum">Şifremi unuttum</a></p>
+    <div class="giris-alt">
+      <label class="radio"><input type="checkbox" name="remember" value="1" <%= form.remember === false ? '' : 'checked' %>> <span>Beni hatırla</span></label>
+      <a class="kucuk" href="/sifremi-unuttum">Şifremi unuttum</a>
+    </div>
     <%- include('../partials/turnstile') %>
     <button class="btn btn-yesil tam">Giriş Yap</button>
     <p class="kucuk merkez">Hesabın yok mu? <a href="/kayit?next=<%= encodeURIComponent(next) %>">Ücretsiz üye ol</a></p>

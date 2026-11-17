@@ -19,10 +19,15 @@ const killSessions = db.prepare("DELETE FROM sessions WHERE json_extract(sess, '
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-function login(req, user, cb) {
+const HATIRLA_MS = 30 * 24 * 3600 * 1000;
+
+// remember: true → 30 gün açık kalır; false → tarayıcı kapanınca oturum biter
+function login(req, user, cb, remember = true) {
   req.session.regenerate((err) => {
     if (err) return cb(err);
     req.session.userId = user.id;
+    if (remember) req.session.cookie.maxAge = HATIRLA_MS;
+    else req.session.cookie.expires = false;
     cb();
   });
 }
@@ -47,15 +52,16 @@ router.get('/giris', (req, res) => {
 router.post('/giris', rateLimit('giris', 10, 15), h.verifyCsrf, turnstile, (req, res, next) => {
   const email = h.str(req.body.email, 200).toLowerCase();
   const nextUrl = h.safeNext(req.body.next);
+  const remember = !!req.body.remember;
   const user = req.botError ? null : byEmail.get(email);
   if (req.botError || !user || !bcrypt.compareSync(String(req.body.password || ''), user.password_hash)) {
-    return res.status(400).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email }, error: req.botError || 'E-posta veya şifre hatalı.' });
+    return res.status(400).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: req.botError || 'E-posta veya şifre hatalı.' });
   }
   login(req, user, (err) => {
     if (err) return next(err);
     h.flash(req, 'success', `Hoş geldin, ${user.name.split(' ')[0]}!`);
     res.redirect(nextUrl);
-  });
+  }, remember);
 });
 
 // ---- Kayıt ----
@@ -76,6 +82,7 @@ router.post('/kayit', rateLimit('kayit', 5, 60), h.verifyCsrf, turnstile, (req, 
   if (!error && form.name.length < 3) error = 'Lütfen adınızı ve soyadınızı yazın.';
   else if (!error && !emailOk(form.email)) error = 'Geçerli bir e-posta adresi girin.';
   else if (!error && password.length < 8) error = 'Şifre en az 8 karakter olmalı.';
+  else if (!error && password !== String(req.body.password2 || '')) error = 'Şifreler birbiriyle aynı değil.';
   else if (!error && !req.body.kvkk) error = 'Devam etmek için Kullanım Şartları ve KVKK metnini onaylayın.';
   else if (!error && byEmail.get(form.email)) error = 'Bu e-posta ile zaten bir hesap var. Şifrenizi unuttuysanız sıfırlayabilirsiniz.';
   if (error) return res.status(400).render('auth/register', { title: 'Üye Ol', next: nextUrl, form, error });
@@ -142,6 +149,7 @@ router.get('/sifre-sifirla/:token', (req, res) => {
 router.post('/sifre-sifirla/:token', rateLimit('sifre', 5, 60), h.verifyCsrf, (req, res, next) => {
   const password = String(req.body.password || '');
   if (password.length < 8) return res.status(400).render('auth/reset', { title: 'Yeni Şifre', token: req.params.token, error: 'Şifre en az 8 karakter olmalı.' });
+  if (password !== String(req.body.password2 || '')) return res.status(400).render('auth/reset', { title: 'Yeni Şifre', token: req.params.token, error: 'Şifreler birbiriyle aynı değil.' });
   const uid = tokens.consume(req.params.token, 'reset');
   if (!uid) return res.status(400).render('error', { title: 'Bağlantı geçersiz', message: 'Bağlantının süresi dolmuş. Lütfen yeniden isteyin.' });
   setPassword.run(bcrypt.hashSync(password, 10), uid);
@@ -167,6 +175,7 @@ router.post('/hesabim/ayarlar', h.requireLogin, h.verifyCsrf, (req, res) => {
     const u = byId.get(req.user.id);
     if (!bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) { h.flash(req, 'error', 'Mevcut şifre hatalı, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
     if (yeni.length < 8) { h.flash(req, 'error', 'Yeni şifre en az 8 karakter olmalı.'); return res.redirect('/hesabim/ayarlar'); }
+    if (yeni !== String(req.body.new_password2 || '')) { h.flash(req, 'error', 'Yeni şifreler birbiriyle aynı değil, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
     setPassword.run(bcrypt.hashSync(yeni, 10), req.user.id);
   }
   h.flash(req, 'success', 'Ayarların kaydedildi.');

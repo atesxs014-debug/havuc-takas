@@ -49,7 +49,6 @@ app.use(session({
     httpOnly: true,
     sameSite: 'lax',
     secure: config.PROD && process.env.COOKIE_SECURE !== '0',
-    maxAge: 30 * 24 * 3600 * 1000,
   },
 }));
 

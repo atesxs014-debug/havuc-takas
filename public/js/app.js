@@ -181,6 +181,36 @@
     });
   });
 
+  // Şifre göster/gizle butonu
+  document.querySelectorAll('input[type=password]').forEach(function (inp) {
+    var kutu = document.createElement('span');
+    kutu.className = 'sifre-kutu';
+    inp.parentNode.insertBefore(kutu, inp);
+    kutu.appendChild(inp);
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sifre-goster';
+    b.textContent = 'Göster';
+    b.setAttribute('aria-label', 'Şifreyi göster');
+    b.addEventListener('click', function () {
+      var gizli = inp.type === 'password';
+      inp.type = gizli ? 'text' : 'password';
+      b.textContent = gizli ? 'Gizle' : 'Göster';
+      b.setAttribute('aria-label', gizli ? 'Şifreyi gizle' : 'Şifreyi göster');
+      inp.focus();
+    });
+    kutu.appendChild(b);
+  });
+
+  // Şifre tekrarı eşleşiyor mu
+  document.querySelectorAll('input[data-ayni]').forEach(function (tekrar) {
+    var asil = tekrar.form && tekrar.form.querySelector('input[name="' + tekrar.getAttribute('data-ayni') + '"]');
+    if (!asil) return;
+    function kontrol() { tekrar.setCustomValidity(tekrar.value && tekrar.value !== asil.value ? 'Şifreler birbiriyle aynı değil.' : ''); }
+    tekrar.addEventListener('input', kontrol);
+    asil.addEventListener('input', kontrol);
+  });
+
   // PWA: service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
