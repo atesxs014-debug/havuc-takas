@@ -73,6 +73,19 @@ havale bilgileri (`BANK_IBAN`…), SMTP, Turnstile, Umami/Plausible, yedek klas�
 - **Google ile giriş:** `.env`'e `GOOGLE_CLIENT_ID` ve `GOOGLE_CLIENT_SECRET` girilince giriş/kayıt sayfalarında "Google ile devam et" çıkar (aşağıda adımlar).
 - **İletişim, Hakkımızda, SSS:** iletişim formu mesajları `/yonetim → İletişim`'e ve e-postana (`CONTACT_EMAIL`, boşsa yöneticilere) düşer.
 
+### Sürüm 4 ile gelenler
+
+- **Güvenlik:** CSP, HSTS (yalnızca canlıda HTTPS'te) ve diğer güvenlik başlıkları. 5 yanlış şifrede hesap 15 dakika kilitlenir ve sahibine e-posta gider. Yeni bir cihazdan giriş yapılınca e-posta + zil uyarısı.
+- **E-posta değiştirme:** Hesap Ayarları'ndan. Yeni adrese onay bağlantısı gider, eski adrese bilgi verilir; bağlantıya tıklanınca değişir.
+- **Teklifler:** alıcı fiyat teklif eder ya da kendi ilanıyla takas önerir. Satıcı kabul eder, reddeder veya karşı teklif verir (`/tekliflerim`). Kabul edilen fiyat, ilan kargoluysa o fiyattan güvenli satın almayı açar. Cevaplanmayan teklif 7 günde düşer.
+- **Bedava ilan:** "🎁 Bedava (hediye)" ilan türü ve ilanlarda "Bedava" filtresi.
+- **Paylaş:** ilan sayfasında WhatsApp, bağlantıyı kopyala ve telefonun paylaş menüsü.
+- **Güvenilir satıcı rozeti:** e-postası doğrulanmış, en az 3 değerlendirmede ortalama 4,5+ alan ve son 90 günde iadesi olmayan satıcılara.
+- **Canlı mesaj:** sohbette yeni mesajlar sayfa yenilenmeden gelir, gönderim de yenilemeden olur. Zil ve mesaj sayacı kendiliğinden güncellenir.
+- **Telefona bildirim:** Bildirimler sayfasında "Bildirimleri aç" → site kapalıyken de telefona/bilgisayara bildirim düşer (iPhone'da önce siteyi ana ekrana eklemek gerekir). Anahtarlar `.env`'de yoksa otomatik üretilir.
+- **Fiyat düştü:** favorideki ilanın fiyatı düşünce zil + e-posta.
+- **Yönetim grafikleri:** `/yonetim → İstatistikler`: son 30 günün yeni üye, ilan, mesaj, teklif, kargo cirosu ve site geliri grafikleri.
+
 ### Google ile giriş nasıl açılır?
 
 1. https://console.cloud.google.com adresinde bir proje oluştur.

@@ -1,0 +1,56 @@
+<%- include('partials/head') %>
+<h1 class="sayfa-baslik">Tekliflerim</h1>
+<nav class="sekmeler">
+  <a href="/tekliflerim" class="<%= sekme === 'gelen' ? 'aktif' : '' %>">İlanlarıma gelen<% const gb = gelen.filter(o => o.status === 'bekliyor').length; if (gb) { %> <span class="rozet"><%= gb %></span><% } %></a>
+  <a href="/tekliflerim?sekme=giden" class="<%= sekme === 'giden' ? 'aktif' : '' %>">Verdiğim teklifler<% const gk = giden.filter(o => o.status === 'karsi').length; if (gk) { %> <span class="rozet"><%= gk %></span><% } %></a>
+</nav>
+<% const liste = sekme === 'gelen' ? gelen : giden; %>
+<% if (!liste.length) { %>
+  <div class="bos-durum"><p><%= sekme === 'gelen' ? 'İlanlarına henüz teklif gelmedi.' : 'Henüz teklif vermedin. Beğendiğin bir ilanda "Teklif ver" butonunu kullanabilirsin.' %></p><a class="btn btn-yesil" href="/ilanlar">İlanlara göz at</a></div>
+<% } else { %>
+  <ul class="teklif-liste">
+    <% liste.forEach(function (o) { const k = getKategori(o.category); const acik = ['bekliyor', 'karsi'].includes(o.status) && o.listing_status === 'active'; %>
+      <li class="teklif-kart durum-<%= o.status %>" data-teklif="<%= o.id %>">
+        <a class="mini-gorsel" href="/ilan/<%= o.listing_id %>" style="--r1:<%= k.renk[0] %>;--r2:<%= k.renk[1] %>"><% if (o.image) { %><img src="/uploads/<%= o.image %>" alt=""><% } else { %><%- k.ikon %><% } %></a>
+        <div class="teklif-govde">
+          <a href="/ilan/<%= o.listing_id %>"><strong><%= o.title %></strong></a>
+          <small><%= sekme === 'gelen' ? o.buyer_name + ' teklif verdi' : o.seller_name + ' satıyor' %> · <%= tarihSaat(o.created_at) %><% if (o.listing_price) { %> · İlan fiyatı <%= fiyat(o.listing_price) %><% } %></small>
+          <div class="teklif-ozet">
+            <% if (o.kind === 'fiyat') { %>
+              <span class="teklif-tutar"><%= fiyat(o.amount) %></span>
+              <% if (o.status === 'karsi') { %><span class="teklif-ok">→</span><span class="teklif-tutar karsi"><%= fiyat(o.counter_amount) %> <small>karşı teklif</small></span><% } %>
+            <% } else { %>
+              <span class="teklif-takas">🔄 Takas: <% if (o.swap_listing_id) { %><a href="/ilan/<%= o.swap_listing_id %>"><%= o.swap_title %></a><% } else { %>ilan kaldırılmış<% } %></span>
+            <% } %>
+            <span class="teklif-durum"><%= o.listing_status !== 'active' && acik === false && ['bekliyor','karsi'].includes(o.status) ? 'İlan yayında değil' : DURUMLAR[o.status] %></span>
+          </div>
+          <% if (o.note) { %><p class="teklif-not">“<%= o.note %>”</p><% } %>
+          <div class="teklif-islem">
+            <% if (sekme === 'gelen' && acik && o.status === 'bekliyor') { %>
+              <form method="post" action="/teklif/<%= o.id %>/kabul" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-yesil">Kabul et</button></form>
+              <form method="post" action="/teklif/<%= o.id %>/red" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-cizgi">Reddet</button></form>
+              <% if (o.kind === 'fiyat') { %>
+                <form method="post" action="/teklif/<%= o.id %>/karsi" class="karsi-form"><input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <input name="amount" inputmode="numeric" placeholder="Karşı teklif (TL)" required aria-label="Karşı teklif tutarı"><button class="btn btn-mini btn-cizgi">Karşı teklif ver</button></form>
+              <% } %>
+              <a class="btn btn-mini btn-cizgi" href="/mesajlar/<%= o.listing_id %>/<%= o.buyer_id %>">💬 Mesaj</a>
+            <% } %>
+            <% if (sekme === 'giden' && acik && o.status === 'karsi') { %>
+              <form method="post" action="/teklif/<%= o.id %>/kabul" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-yesil"><%= fiyat(o.counter_amount) %> kabul et</button></form>
+              <form method="post" action="/teklif/<%= o.id %>/red" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-cizgi">Reddet</button></form>
+            <% } %>
+            <% if (sekme === 'giden' && acik) { %>
+              <form method="post" action="/teklif/<%= o.id %>/iptal" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn kirmizi-link">Teklifi geri çek</button></form>
+            <% } %>
+            <% if (sekme === 'giden' && o.status === 'kabul' && o.listing_status === 'active') { %>
+              <% if (o.kind === 'fiyat' && o.shipping) { %><a class="btn btn-mini btn-yesil" href="/ilan/<%= o.listing_id %>/satin-al?teklif=<%= o.id %>">📦 <%= fiyat(o.amount) %> ile kargoyla satın al</a><% } %>
+              <a class="btn btn-mini btn-cizgi" href="/mesajlar/<%= o.listing_id %>/<%= o.seller_id %>">💬 Satıcıya yaz</a>
+            <% } %>
+            <% if (sekme === 'gelen' && o.status === 'kabul') { %><a class="btn btn-mini btn-cizgi" href="/mesajlar/<%= o.listing_id %>/<%= o.buyer_id %>">💬 Alıcıya yaz</a><% } %>
+          </div>
+        </div>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
+<%- include('partials/foot') %>

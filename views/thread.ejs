@@ -2,13 +2,12 @@
 <div class="sohbet">
   <a class="sohbet-ilan" href="<%= ilanUrl(ilan) %>">
     <span class="mini-gorsel" style="--r1:<%= getKategori(ilan.category).renk[0] %>;--r2:<%= getKategori(ilan.category).renk[1] %>"><% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt=""><% } else { %><%- getKategori(ilan.category).ikon %><% } %></span>
-    <span><strong><%= ilan.title %></strong><small><%= ilan.price != null ? fiyat(ilan.price) : 'Takaslık' %> · <%= other.name %></small></span>
+    <span><strong><%= ilan.title %></strong><small><%= ilan.price === 0 ? 'Bedava' : ilan.price != null ? fiyat(ilan.price) : 'Takaslık' %> · <%= other.name %></small></span>
   </a>
-  <div class="mesajlar">
+  <div class="mesajlar" data-canli="/mesajlar/<%= ilan.id %>/<%= other.id %>/yeni" data-son="<%= msgs.length ? msgs[msgs.length - 1].id : 0 %>">
     <% if (!msgs.length) { %><p class="kucuk merkez">Mesajın sadece <%= other.name %> tarafından görülür. Kibar ol, telefon/IBAN paylaşmadan önce emin ol. 🙂</p><% } %>
-    <% msgs.forEach(function (m, i) { %>
-      <div class="balon <%= m.sender_id === user.id ? 'benim' : '' %><%= m.image ? ' fotolu' : '' %>" <%= i === msgs.length - 1 ? 'id=son' : '' %>><% if (m.image) { %><a href="/uploads/<%= m.image %>" target="_blank" rel="noopener" class="balon-foto"><img src="/uploads/<%= m.image %>" alt="Gönderilen fotoğraf" loading="lazy"></a><% } %><% if (m.body) { %><span class="balon-metin"><%= m.body %></span><% } %><small><%= tarihSaat(m.created_at) %></small></div>
-    <% }) %>
+    <% msgs.forEach(function (m) { %><%- include('partials/balon', { m }) %><% }) %>
+    <span id="son"></span>
   </div>
   <% if (puanlanabilir) { %>
     <form method="post" action="/ilan/<%= ilan.id %>/degerlendir" class="puan-form">

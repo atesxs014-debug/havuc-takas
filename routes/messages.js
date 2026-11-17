@@ -62,21 +62,42 @@ router.post('/mesajlar/:listingId/:userId', h.requireLogin, h.requireVerified, r
     const t = loadThread(req);
     if (!t) return next();
     const back = `/mesajlar/${t.ilan.id}/${t.other.id}#son`;
-    if (engel.arasinda(req.user.id, t.other.id)) { h.flash(req, 'error', 'Bu kişiyle mesajlaşma engelli.'); return res.redirect(back); }
-    if (req.uploadError) { h.flash(req, 'error', req.uploadError); return res.redirect(back); }
+    // Sayfa yenilenmeden gönderimde (X-Canli) cevap JSON olur
+    const canli = req.get('X-Canli') === '1';
+    const hata = (text) => { if (canli) return res.status(400).json({ hata: text }); h.flash(req, 'error', text); res.redirect(back); };
+    if (engel.arasinda(req.user.id, t.other.id)) return hata('Bu kişiyle mesajlaşma engelli.');
+    if (req.uploadError) return hata(req.uploadError);
     const body = h.str(req.body.body, 2000);
     let image = null;
     if (req.files.length) {
       try { image = await images.saveMessagePhoto(req.files[0].buffer); } catch (e) {
-        h.flash(req, 'error', 'Fotoğraf okunamadı. JPG veya PNG dene.'); return res.redirect(back);
+        return hata('Fotoğraf okunamadı. JPG veya PNG dene.');
       }
     }
     if (body || image) {
       insert.run(t.ilan.id, req.user.id, t.other.id, body, image);
       notify.newMessage({ listing: t.ilan, senderId: req.user.id, receiverId: t.other.id, body: body || '📷 Fotoğraf gönderdi' });
     }
+    if (canli) return res.json({ ok: true });
     res.redirect(back);
   } catch (e) { next(e); }
+});
+
+// ---- Canlı mesaj: sohbet sayfası birkaç saniyede bir yeni mesajları sorar ----
+const newer = db.prepare(`SELECT * FROM messages WHERE listing_id = ? AND id > ?
+  AND ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)) ORDER BY id LIMIT 50`);
+router.get('/mesajlar/:listingId/:userId/yeni', h.requireLogin, (req, res, next) => {
+  const t = loadThread(req);
+  if (!t) return next();
+  const after = parseInt(req.query.after, 10) || 0;
+  const msgs = newer.all(t.ilan.id, after, req.user.id, t.other.id, t.other.id, req.user.id);
+  if (msgs.some((m) => m.receiver_id === req.user.id)) markRead.run(t.ilan.id, t.other.id, req.user.id);
+  res.set('Cache-Control', 'no-store');
+  if (!msgs.length) return res.json({ son: after, html: '' });
+  res.render('partials/balon-liste', { msgs }, (err, html) => {
+    if (err) return next(err);
+    res.json({ son: msgs[msgs.length - 1].id, html });
+  });
 });
 
 // ---- Engelle / engeli kaldır ----

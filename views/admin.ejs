@@ -1,6 +1,7 @@
 <%- include('partials/head') %>
 <h1 class="sayfa-baslik">Yönetim Paneli</h1>
 <nav class="sekmeler">
+  <a href="?tab=grafik" class="<%= tab === 'grafik' ? 'aktif' : '' %>">📊 İstatistikler</a>
   <a href="?tab=bekleyen" class="<%= tab === 'bekleyen' ? 'aktif' : '' %>">Reklam başvuruları <span class="rozet"><%= c.bekleyen %></span></a>
   <a href="?tab=aktif" class="<%= tab === 'aktif' ? 'aktif' : '' %>">Aktif reklamlar (<%= c.aktif %>)<% if (c.uzatma) { %> <span class="rozet"><%= c.uzatma %> uzatma</span><% } %></a>
   <a href="?tab=gecmis" class="<%= tab === 'gecmis' ? 'aktif' : '' %>">Geçmiş</a>
@@ -16,7 +17,27 @@
   <a href="?tab=yedek" class="<%= tab === 'yedek' ? 'aktif' : '' %>">💾 Yedekler</a>
 </nav>
 
-<% if (!rows.length && !['fiyatlar', 'kelimeler', 'yedek', 'kargo', 'uye'].includes(tab)) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
+<% if (!rows.length && !['fiyatlar', 'kelimeler', 'yedek', 'kargo', 'uye', 'grafik'].includes(tab)) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
+
+<% if (tab === 'grafik') { %>
+  <p class="kucuk">Son <%= grafikGun %> günün günlük sayıları. Çubukların üzerine gelince o günün değeri görünür.</p>
+  <div class="yg-grafikler">
+    <% grafikler.forEach(function (g) { %>
+      <figure class="yg-grafik">
+        <figcaption><strong><%= g.ad %></strong><span><%= sayi(g.toplam) %><%= g.birim %></span><small>Son <%= grafikGun %> gün toplamı · en yoğun gün <%= sayi(g.max) %><%= g.birim %></small></figcaption>
+        <%- grafikSvg(g) %>
+      </figure>
+    <% }) %>
+  </div>
+  <details class="kucuk"><summary>Tablo olarak gör</summary>
+    <div class="tablo-kaydir"><table class="tutar-tablo">
+      <tr><th>Gün</th><% grafikler.forEach(function (g) { %><th><%= g.ad %></th><% }) %></tr>
+      <% grafikler[0].veri.slice().reverse().forEach(function (x, i) { const j = grafikler[0].veri.length - 1 - i; %>
+        <tr><td><%= x.g %></td><% grafikler.forEach(function (g) { %><td><%= sayi(g.veri[j].n) %></td><% }) %></tr>
+      <% }) %>
+    </table></div>
+  </details>
+<% } %>
 
 <% if (['bekleyen', 'aktif', 'gecmis'].includes(tab)) { %>
   <div class="admin-liste">

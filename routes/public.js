@@ -31,6 +31,23 @@ router.get('/iller.js', (req, res) => {
   res.type('application/javascript').set('Cache-Control', 'public, max-age=86400').send(ilJs);
 });
 
+// KVKK metni sitenin o an açık olan özelliklerine göre yazılır (kapalı özelliğin verisi anlatılmaz)
+function kvkkBilgi() {
+  const config = require('../lib/config');
+  return {
+    vs: config.kvkk,
+    ozellik: {
+      kargo: require('../lib/payments').kargoAcik(),
+      vitrin: require('../lib/vitrin').acik(),
+      google: !!config.google,
+      turnstile: !!config.turnstile,
+      analitik: !!((config.analytics.umamiSrc && config.analytics.umamiId) || config.analytics.plausibleDomain),
+      smtp: !!config.smtp,
+      yedekGun: config.backup.keepDays,
+    },
+  };
+}
+
 const sayfalar = {
   kvkk: { view: 'pages/kvkk', title: 'KVKK Aydınlatma Metni' },
   gizlilik: { view: 'pages/gizlilik', title: 'Gizlilik Politikası' },
@@ -38,7 +55,7 @@ const sayfalar = {
   'guvenli-takas': { view: 'pages/guvenli-takas', title: 'Güvenli Takas Rehberi' },
 };
 for (const [slug, s] of Object.entries(sayfalar)) {
-  router.get('/' + slug, (req, res) => res.render(s.view, { title: s.title }));
+  router.get('/' + slug, (req, res) => res.render(s.view, { title: s.title, ...(slug === 'kvkk' ? kvkkBilgi() : {}) }));
 }
 
 

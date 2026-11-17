@@ -29,7 +29,7 @@ function renderListings(req, res, preset = {}) {
   const kategori = isKategori(req.query.kategori) ? req.query.kategori : '';
   const ara = h.str(req.query.q, 100);
   const sirala = SIRALAMA[req.query.sirala] ? req.query.sirala : 'yeni';
-  const tip = ['satilik', 'takas'].includes(req.query.tip) ? req.query.tip : '';
+  const tip = ['satilik', 'takas', 'bedava'].includes(req.query.tip) ? req.query.tip : '';
   const sayfa = Math.max(1, parseInt(req.query.sayfa, 10) || 1);
   const durum = isDurum(req.query.durum) ? req.query.durum : '';
   const tlSayi = (v) => { const n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10); return Number.isFinite(n) ? n : null; };
@@ -42,7 +42,8 @@ function renderListings(req, res, preset = {}) {
   if (il) { where.push('l.il = ?'); params.push(il.slug); }
   if (ilce) { where.push('l.ilce = ?'); params.push(ilce.slug); }
   if (kategori) { where.push('l.category = ?'); params.push(kategori); }
-  if (tip === 'satilik') where.push('l.price IS NOT NULL');
+  if (tip === 'satilik') where.push('l.price > 0');
+  if (tip === 'bedava') where.push('l.price = 0');
   if (tip === 'takas') where.push('l.is_swap = 1');
   if (durum) { where.push('l.condition = ?'); params.push(durum); }
   if (fmin != null) { where.push('l.price >= ?'); params.push(fmin); }
@@ -86,7 +87,7 @@ router.get('/il/:il/:ilce', (req, res, next) =>
   getIlce(req.params.il, req.params.ilce) ? renderListings(req, res, { il: req.params.il, ilce: req.params.ilce }) : next());
 
 // ---- İlan detay ----
-const getListing = db.prepare(`SELECT l.*, u.name AS seller_name, u.created_at AS seller_since, u.banned_at AS seller_banned,
+const getListing = db.prepare(`SELECT l.*, u.name AS seller_name, u.created_at AS seller_since, u.banned_at AS seller_banned, u.email_verified AS seller_verified,
   (SELECT COUNT(*) FROM listings x WHERE x.user_id = l.user_id AND x.status = 'active') AS seller_count,
   (SELECT ROUND(AVG(score), 1) FROM reviews r WHERE r.seller_id = l.user_id) AS seller_rating,
   (SELECT COUNT(*) FROM reviews r WHERE r.seller_id = l.user_id) AS seller_reviews
@@ -139,7 +140,7 @@ router.get('/ilan/:id', (req, res, next) => {
 
   res.render('listing', {
     title: `${ilan.title} - ${h.konumAdi(ilan.il, ilan.ilce)}`,
-    description: (ilan.price != null ? h.fiyat(ilan.price) + ' · ' : 'Takaslık · ') + ilan.description.slice(0, 140),
+    description: (ilan.price === 0 ? 'Bedava · ' : ilan.price != null ? h.fiyat(ilan.price) + ' · ' : 'Takaslık · ') + ilan.description.slice(0, 140),
     canonical: base + canonical,
     ogImage: fotolar.length ? `${base}/uploads/${fotolar[0].file}` : res.locals.ogImage,
     ogType: 'product',
@@ -150,7 +151,9 @@ router.get('/ilan/:id', (req, res, next) => {
     vitrin: isOwner ? require('../lib/vitrin').ayarlar() : null,
     vitrinAcik: require('../lib/vitrin').acik(),
     favSayisi: favCount.get(id).n,
-    kargo: ilan.shipping && ilan.price != null ? {
+    guvenilir: require('../lib/reviews').guvenilir(ilan.user_id),
+    teklif: teklifBilgi(ilan, req.user, isOwner),
+    kargo: ilan.shipping && ilan.price > 0 ? {
       tutar: require('../lib/orders').hesapla(ilan),
       engel: require('./orders').satinAlinabilir(ilan, req.user),
     } : null,
@@ -159,9 +162,24 @@ router.get('/ilan/:id', (req, res, next) => {
   });
 });
 
+// Teklif kutusu için bilgiler
+function teklifBilgi(ilan, user, isOwner) {
+  const teklif = require('../lib/teklif');
+  if (ilan.status !== 'active') return null;
+  if (isOwner) return { bekleyen: teklif.bekleyenSayisi(ilan.id) };
+  if (!(ilan.price > 0) && !ilan.is_swap) return null;
+  if (!user) return { girisYok: true };
+  const son = teklif.benimSon(ilan.id, user.id);
+  return {
+    son, DURUMLAR: teklif.DURUMLAR,
+    kabulFiyat: son && son.status === 'kabul' && son.kind === 'fiyat' ? son : null,
+    takaslik: ilan.is_swap ? teklif.takaslik(user.id).filter((x) => x.id !== ilan.id) : [],
+  };
+}
+
 // ---- İlan ver / düzenle ----
 function readForm(req) {
-  const tur = req.body.tur === 'takas' ? 'takas' : req.body.tur === 'ikisi' ? 'ikisi' : 'satilik';
+  const tur = ['takas', 'ikisi', 'bedava'].includes(req.body.tur) ? req.body.tur : 'satilik';
   const fiyatRaw = String(req.body.price || '').replace(/[^\d]/g, '');
   return {
     title: h.str(req.body.title, 90),
@@ -170,8 +188,8 @@ function readForm(req) {
     il: h.str(req.body.il, 60),
     ilce: h.str(req.body.ilce, 60),
     tur,
-    price: tur === 'takas' ? null : fiyatRaw ? parseInt(fiyatRaw, 10) : null,
-    shipping: req.body.shipping && tur !== 'takas' ? 1 : 0,
+    price: tur === 'takas' ? null : tur === 'bedava' ? 0 : fiyatRaw ? parseInt(fiyatRaw, 10) : null,
+    shipping: req.body.shipping && !['takas', 'bedava'].includes(tur) ? 1 : 0,
     package_size: ['kucuk', 'orta', 'buyuk'].includes(req.body.package_size) ? req.body.package_size : 'orta',
     condition: isDurum(req.body.condition) ? req.body.condition : '',
   };
@@ -192,7 +210,7 @@ function validate(f) {
   if (!f.category) return 'Bir kategori seçin.';
   if (!f.condition) return 'Ürünün durumunu seçin.';
   if (!getIlce(f.il, f.ilce)) return 'İl ve ilçe seçin.';
-  if (f.tur !== 'takas' && (f.price == null || f.price < 1 || f.price > 100000000)) return 'Geçerli bir fiyat girin veya "Sadece takas" seçin.';
+  if (!['takas', 'bedava'].includes(f.tur) && (f.price == null || f.price < 1 || f.price > 100000000)) return 'Geçerli bir fiyat girin veya "Sadece takas" seçin.';
   return null;
 }
 
@@ -231,7 +249,7 @@ router.post('/ilan-ver', h.requireLogin, h.requireVerified, rateLimit('ilan', 20
       const hits = moderation.check(form.title, form.description);
       const status = hits.length ? 'pending' : 'active';
       const info = insertListing.run(req.user.id, form.title, form.description, form.category, form.price,
-        form.tur === 'satilik' ? 0 : 1, form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, form.condition);
+        ['satilik', 'bedava'].includes(form.tur) ? 0 : 1, form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, form.condition);
       const id = Number(info.lastInsertRowid);
       try {
         await savePhotos(id, req.files, 0);
@@ -256,7 +274,7 @@ const ownListing = db.prepare('SELECT * FROM listings WHERE id = ? AND user_id =
 router.get('/ilan/:id/duzenle', h.requireLogin, (req, res, next) => {
   const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
   if (!l || ['removed', 'banned'].includes(l.status)) return next();
-  const form = { ...l, tur: l.price == null ? 'takas' : l.is_swap ? 'ikisi' : 'satilik' };
+  const form = { ...l, tur: l.price == null ? 'takas' : l.price === 0 ? 'bedava' : l.is_swap ? 'ikisi' : 'satilik' };
   res.render('listing-form', { title: 'İlanı Düzenle', form, edit: true, fotolar: getImages.all(l.id), MAX_FOTO: images.MAX_FOTO, noindex: true, ...kargoBilgi(req) });
 });
 
@@ -293,9 +311,10 @@ router.post('/ilan/:id/duzenle', h.requireLogin, images.parse('photos', images.M
     let status = l.status;
     if (hits.length && ['active', 'pending'].includes(l.status)) status = 'pending';
     else if (!hits.length && l.status === 'pending') status = 'active';
-    updateListing.run(form.title, form.description, form.category, form.price, form.tur === 'satilik' ? 0 : 1,
+    updateListing.run(form.title, form.description, form.category, form.price, ['satilik', 'bedava'].includes(form.tur) ? 0 : 1,
       form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, form.condition, l.id, req.user.id);
     setCover.run(l.id, l.id);
+    if (status === 'active' && l.price > 0 && form.price != null && form.price < l.price) require('../lib/fiyat-dustu').bildir(l, form.price);
     if (status === 'pending' && l.status !== 'pending') notify.listingPending({ id: l.id, title: form.title, mod_reason: hits.join(', ') }, req.user.id);
     h.flash(req, status === 'pending' ? 'info' : 'success', status === 'pending' ? 'İlan güncellendi ve incelemeye alındı.' : 'İlan güncellendi.');
     res.redirect(h.ilanUrl(form));
@@ -335,7 +354,7 @@ router.post('/aramalarim', h.requireLogin, rateLimit('arama-kaydet', 30, 60), h.
   const il = getIl(h.str(req.body.il, 60));
   const f = {
     q: h.str(req.body.q, 100), il: il ? il.slug : '', ilce: il && getIlce(il.slug, h.str(req.body.ilce, 60)) ? h.str(req.body.ilce, 60) : '',
-    kategori: isKategori(req.body.kategori) ? req.body.kategori : '', tip: ['satilik', 'takas'].includes(req.body.tip) ? req.body.tip : '',
+    kategori: isKategori(req.body.kategori) ? req.body.kategori : '', tip: ['satilik', 'takas', 'bedava'].includes(req.body.tip) ? req.body.tip : '',
     durum: isDurum(req.body.durum) ? req.body.durum : '', fmin: tlSayi(req.body.fmin), fmax: tlSayi(req.body.fmax),
   };
   const back = bildirim.aramaUrl(f);

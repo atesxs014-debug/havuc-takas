@@ -7,6 +7,7 @@
     <div><strong><%= ilan.title %></strong><small>Satıcı: <%= ilan.seller_name %> · <%= konumAdi(ilan.il, ilan.ilce) %></small></div>
   </div>
   <form method="post" class="form kart-form">
+    <% if (typeof teklif !== 'undefined' && teklif) { %><input type="hidden" name="teklif" value="<%= teklif.id %>"><% } %>
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h2 class="form-baslik">Teslimat adresi</h2>
     <div class="iki-kolon">
@@ -18,7 +19,7 @@
 
     <h2 class="form-baslik">Ödeme özeti</h2>
     <table class="tutar-tablo">
-      <tr><td>Ürün</td><td><%= fiyat(tutar.urun) %></td></tr>
+      <tr><td>Ürün<% if (typeof teklif !== 'undefined' && teklif) { %> <small class="kucuk">(kabul edilen teklif)</small><% } %></td><td><%= fiyat(tutar.urun) %></td></tr>
       <tr><td>Kargo</td><td><%= fiyat(tutar.kargo) %></td></tr>
       <tr><td>Güvenli ödeme hizmet bedeli</td><td><%= fiyat(tutar.hizmet) %></td></tr>
       <tr class="toplam"><td>Toplam</td><td><%= fiyat(tutar.toplam) %></td></tr>
