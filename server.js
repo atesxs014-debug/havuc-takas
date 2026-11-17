@@ -52,17 +52,20 @@ app.use(session({
   },
 }));
 
-const getUser = db.prepare('SELECT id, name, email, phone, is_admin, email_verified, notify_email, created_at FROM users WHERE id = ?');
+const getUser = db.prepare('SELECT id, name, email, phone, is_admin, email_verified, notify_email, created_at, google_id, banned_at, password_hash = \'!\' AS no_password FROM users WHERE id = ?');
 const unreadCount = db.prepare('SELECT COUNT(*) AS n FROM messages WHERE receiver_id = ? AND read_at IS NULL');
 const favIds = db.prepare('SELECT listing_id FROM favorites WHERE user_id = ?');
 
 app.use((req, res, next) => {
   req.user = req.session.userId ? getUser.get(req.session.userId) || null : null;
+  // Engellenen üyenin oturumu kapanır
+  if (req.user && req.user.banned_at) { req.user = null; delete req.session.userId; }
   const base = h.baseUrl(req);
   Object.assign(res.locals, {
     SITE_NAME,
     user: req.user,
     unread: req.user ? unreadCount.get(req.user.id).n : 0,
+    bildirimSayisi: req.user ? require('./lib/bildirim').okunmamis(req.user.id) : 0,
     favs: req.user ? new Set(favIds.all(req.user.id).map((r) => r.listing_id)) : new Set(),
     csrf: h.csrfToken(req),
     flash: req.session.flash || null,
@@ -78,6 +81,7 @@ app.use((req, res, next) => {
       turnstileKey: config.turnstile ? config.turnstile.siteKey : '',
       analytics: config.analytics,
       requireVerify: config.REQUIRE_VERIFY,
+      google: !!config.google,
     },
     kategoriler, iller, getIl, getIlce,
     fiyat: h.fiyat,
@@ -100,6 +104,9 @@ app.use(require('./routes/listings'));
 app.use(require('./routes/social'));
 app.use(require('./routes/orders'));
 app.use(require('./routes/messages'));
+app.use(require('./routes/vitrin'));
+app.use(require('./routes/hesap'));
+app.use(require('./routes/google'));
 app.use(require('./routes/ads'));
 app.use(require('./routes/business'));
 app.use('/yonetim', require('./routes/admin'));

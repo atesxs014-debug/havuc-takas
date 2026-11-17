@@ -22,7 +22,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Havuç Takas">
-<link rel="stylesheet" href="/static/css/style.css?v=3">
+<link rel="stylesheet" href="/static/css/style.css?v=4">
 <% if (jsonLd) { %><script type="application/ld+json"><%- JSON.stringify(jsonLd).replace(/</g, '\\u003c') %></script><% } %>
 <% if (cfg.analytics.umamiSrc && cfg.analytics.umamiId) { %><script defer src="<%= cfg.analytics.umamiSrc %>" data-website-id="<%= cfg.analytics.umamiId %>"></script><% } %>
 <% if (cfg.analytics.plausibleDomain) { %><script defer data-domain="<%= cfg.analytics.plausibleDomain %>" src="<%= cfg.analytics.plausibleSrc %>"></script><% } %>
@@ -32,11 +32,24 @@
 <header class="topbar">
   <div class="wrap topbar-in">
     <a href="/" class="logo"><span class="logo-ikon">🥕</span> Havuç Takas</a>
+    <% if (!path.startsWith('/ilanlar') && !path.startsWith('/il/') && path !== '/') { %>
+      <form class="ust-ara" action="/ilanlar" method="get" role="search">
+        <input type="search" name="q" placeholder="İlan ara..." aria-label="İlan ara" maxlength="100">
+        <button aria-label="Ara"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      </form>
+    <% } %>
+    <% if (user) { %>
+      <a href="/bildirimler" class="zil<%= bildirimSayisi ? ' var' : '' %>" aria-label="Bildirimler<%= bildirimSayisi ? ' (' + bildirimSayisi + ' yeni)' : '' %>" title="Bildirimler">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <% if (bildirimSayisi) { %><span class="zil-sayi"><%= bildirimSayisi > 99 ? '99+' : bildirimSayisi %></span><% } %>
+      </a>
+    <% } %>
     <nav class="nav" id="nav">
       <a href="/ilanlar" class="<%= path.startsWith('/ilanlar') || path.startsWith('/il/') ? 'aktif' : '' %>">İlanlar</a>
       <% if (user) { %>
         <a href="/mesajlar">Mesajlar<% if (unread) { %> <span class="rozet"><%= unread %></span><% } %></a>
         <a href="/siparislerim">Siparişler</a>
+        <a href="/aramalarim" class="sadece-mobil">Kayıtlı Aramalar</a>
         <a href="/hesabim">Hesabım</a>
         <% if (user.is_admin) { %><a href="/yonetim">Yönetim</a><% } %>
         <form method="post" action="/cikis" class="nav-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Çıkış</button></form>

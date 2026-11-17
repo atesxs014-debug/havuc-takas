@@ -1,0 +1,42 @@
+const { chromium } = require('playwright');
+const { B, ok, shot } = require('./helpers');
+(async () => {
+  const br = await chromium.launch(); const errs = [];
+  const ctx = await br.newContext({ viewport: { width: 390, height: 900 } }); const p = await ctx.newPage(); p.on('pageerror', e => errs.push(e.message));
+  await p.goto(B + '/kayit');
+  ok(await p.locator('[name=email][required]').count() === 1, 'kayıtta e-posta zorunlu');
+  ok(await p.locator('[name=password2]').count() === 1, 'kayıtta şifre tekrarı var');
+  ok(await p.locator('.sifre-goster').count() === 2, 'iki şifre alanında Göster butonu');
+  await p.fill('[name=password]', 'gizli12345'); await p.locator('.sifre-goster').first().click();
+  ok(await p.getAttribute('[name=password]', 'type') === 'text', 'Göster → şifre görünür');
+  ok(await p.locator('.sifre-goster.acik').count() === 1 && (await p.locator('.sifre-goster').first().getAttribute('aria-label')) === 'Şifreyi gizle', 'göz açıldı, etiket Gizle');
+  await p.locator('.sifre-goster').first().click();
+  ok(await p.getAttribute('[name=password]', 'type') === 'password', 'Gizle → tekrar gizli');
+  await p.fill('[name=name]', 'Deneme Kişi'); await p.fill('[name=email]', 'tekrar@test.com'); await p.fill('[name=password2]', 'baska12345'); await p.check('[name=kvkk]');
+  ok(!(await p.$eval('[name=password2]', e => e.checkValidity())), 'tarayıcı uyuşmayan şifreyi engelliyor');
+  // sunucu tarafı (JS atlatılsa da)
+  await p.$eval('[name=password2]', e => e.setCustomValidity('')); await p.$eval('form.kart-form', f => f.noValidate = true);
+  await p.click('form.kart-form button.tam');
+  ok((await p.content()).includes('Şifreler birbiriyle aynı değil'), 'sunucu uyuşmayan şifreyi reddediyor');
+  await p.fill('[name=password]', 'gizli12345'); await p.fill('[name=password2]', 'gizli12345'); await p.check('[name=kvkk]');
+  await Promise.all([p.waitForNavigation(), p.click('form.kart-form button.tam')]);
+  ok(!(await p.content()).includes('flash-error'), 'eşleşen şifreyle kayıt oldu');
+  // çıkış ve giriş: beni hatırla
+  await ctx.clearCookies();
+  await p.goto(B + '/giris');
+  ok(await p.locator('[name=remember]').isChecked(), 'Beni hatırla varsayılan işaretli');
+  ok(await p.locator('.sifre-goster').count() === 1, 'girişte Göster butonu');
+  await shot(p, 'giris.png', { fullPage: false });
+  await p.fill('[name=email]', 'tekrar@test.com'); await p.fill('[name=password]', 'gizli12345');
+  await Promise.all([p.waitForNavigation(), p.click('form.kart-form button.tam')]);
+  let c = (await ctx.cookies()).find(x => x.name === 'havuc.sid');
+  ok(c && c.expires > Date.now() / 1000 + 25 * 86400, 'Beni hatırla açık → çerez 30 gün');
+  await ctx.clearCookies();
+  await p.goto(B + '/giris'); await p.fill('[name=email]', 'tekrar@test.com'); await p.fill('[name=password]', 'gizli12345'); await p.uncheck('[name=remember]');
+  await Promise.all([p.waitForNavigation(), p.click('form.kart-form button.tam')]);
+  c = (await ctx.cookies()).find(x => x.name === 'havuc.sid');
+  ok(c && c.expires === -1, 'Beni hatırla kapalı → tarayıcı kapanınca biter');
+  ok((await p.content()).includes('Hoş geldin'), 'giriş yapıldı');
+  ok(errs.length === 0, 'JS hatası yok ' + errs.join('|'));
+  await br.close();
+})();

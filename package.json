@@ -1,6 +1,6 @@
 {
   "name": "havuc-takas",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "Havuç Takas - Komisyonsuz ikinci el ve takas platformu",
   "main": "server.js",
@@ -8,7 +8,8 @@
     "start": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning server.js",
     "dev": "node --env-file-if-exists=.env --watch --no-warnings=ExperimentalWarning server.js",
     "seed": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/seed.js",
-    "yedek": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/yedek.js"
+    "yedek": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/yedek.js",
+    "test": "node test/run.js"
   },
   "engines": {
     "node": ">=22.13"
@@ -22,5 +23,8 @@
     "multer": "^2.5.0",
     "nodemailer": "^10.6.0",
     "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
   }
 }

@@ -1,0 +1,30 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa dar">
+  <h1 class="sayfa-baslik">Hesabımı Sil</h1>
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <div class="kart-form">
+    <p><strong>Bu işlem geri alınamaz.</strong> Silindiğinde:</p>
+    <ul class="kucuk">
+      <li>İlanların, fotoğrafların, mesajların, favorilerin, kayıtlı aramaların ve değerlendirmelerin silinir.</li>
+      <li>Kayıtlı IBAN ve kimlik bilgilerin silinir.</li>
+      <li>Tamamlanmış siparişlerin ve ödemelerin, yasal saklama süresi boyunca adın olmadan (anonim) tutulur.</li>
+    </ul>
+    <p class="kucuk">Silmeden önce <a href="/hesabim/verilerim">verilerinin bir kopyasını indirebilirsin</a>.</p>
+    <% if (engel) { %>
+      <div class="flash flash-info"><%= engel %> <a href="/siparislerim">Siparişlerime git</a></div>
+    <% } else { %>
+      <form method="post" action="/hesabim/sil" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <% if (user.no_password) { %>
+          <label>Onaylamak için e-posta adresini yaz<input type="email" name="confirm_email" required autocomplete="off" placeholder="<%= user.email %>"></label>
+        <% } else { %>
+          <label>Şifren<input type="password" name="password" required autocomplete="current-password"></label>
+        <% } %>
+        <label class="radio"><input type="checkbox" name="onay" value="1" required> <span>Hesabımın ve verilerimin kalıcı olarak silineceğini anladım.</span></label>
+        <button class="btn btn-kirmizi tam" data-confirm="Hesabın kalıcı olarak silinecek. Emin misin?">Hesabımı kalıcı olarak sil</button>
+      </form>
+    <% } %>
+    <p class="kucuk merkez"><a href="/hesabim/ayarlar">Vazgeç</a></p>
+  </div>
+</div>
+<%- include('../partials/foot') %>

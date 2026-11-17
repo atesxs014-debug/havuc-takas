@@ -7,7 +7,7 @@
   <div class="mesajlar">
     <% if (!msgs.length) { %><p class="kucuk merkez">Mesajın sadece <%= other.name %> tarafından görülür. Kibar ol, telefon/IBAN paylaşmadan önce emin ol. 🙂</p><% } %>
     <% msgs.forEach(function (m, i) { %>
-      <div class="balon <%= m.sender_id === user.id ? 'benim' : '' %>" <%= i === msgs.length - 1 ? 'id=son' : '' %>><%= m.body %><small><%= tarihSaat(m.created_at) %></small></div>
+      <div class="balon <%= m.sender_id === user.id ? 'benim' : '' %><%= m.image ? ' fotolu' : '' %>" <%= i === msgs.length - 1 ? 'id=son' : '' %>><% if (m.image) { %><a href="/uploads/<%= m.image %>" target="_blank" rel="noopener" class="balon-foto"><img src="/uploads/<%= m.image %>" alt="Gönderilen fotoğraf" loading="lazy"></a><% } %><% if (m.body) { %><span class="balon-metin"><%= m.body %></span><% } %><small><%= tarihSaat(m.created_at) %></small></div>
     <% }) %>
   </div>
   <% if (puanlanabilir) { %>
@@ -21,10 +21,31 @@
       <button class="btn btn-mini btn-yesil">Gönder</button>
     </form>
   <% } %>
-  <form method="post" class="mesaj-yaz">
-    <input type="hidden" name="_csrf" value="<%= csrf %>">
-    <textarea name="body" rows="2" required maxlength="2000" placeholder="<%= msgs.length ? 'Mesaj yaz...' : 'Merhaba, ilan hâlâ güncel mi?' %>"></textarea>
-    <button class="btn btn-yesil">Gönder</button>
-  </form>
+  <% if (benEngelledim || engellendim) { %>
+    <div class="engel-bant">
+      <% if (benEngelledim) { %>🚫 <%= other.name %> kişisini engelledin, mesajlaşamazsınız.
+        <form method="post" action="/engel/<%= other.id %>" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="islem" value="kaldir"><input type="hidden" name="next" value="<%= path %>"><button class="linkbtn">Engeli kaldır</button></form>
+      <% } else { %>🚫 Bu kişiye mesaj gönderemezsin.<% } %>
+    </div>
+  <% } else { %>
+    <form method="post" class="mesaj-yaz" enctype="multipart/form-data" data-mesaj-form>
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="foto-ekle" title="Fotoğraf ekle" aria-label="Fotoğraf ekle">
+        <input type="file" name="photo" accept="image/*" data-mesaj-foto hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 5l1.5-2h4l1.5 2"/></svg>
+      </label>
+      <div class="mesaj-alan">
+        <div class="foto-onizleme" data-foto-onizleme hidden><img alt=""><button type="button" aria-label="Fotoğrafı kaldır" data-foto-kaldir>×</button></div>
+        <textarea name="body" rows="2" maxlength="2000" placeholder="<%= msgs.length ? 'Mesaj yaz...' : 'Merhaba, ilan hâlâ güncel mi?' %>"></textarea>
+      </div>
+      <button class="btn btn-yesil">Gönder</button>
+    </form>
+  <% } %>
+  <div class="sohbet-alt">
+    <% if (!benEngelledim) { %>
+      <form method="post" action="/engel/<%= other.id %>" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="islem" value="engelle"><input type="hidden" name="next" value="<%= path %>">
+        <button class="linkbtn kirmizi-link" data-confirm="<%= other.name %> engellensin mi? Birbirinize mesaj gönderemeyeceksiniz.">🚫 <%= other.name %> kişisini engelle</button></form>
+    <% } %>
+  </div>
 </div>
 <%- include('partials/foot') %>

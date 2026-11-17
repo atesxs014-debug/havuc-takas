@@ -1,12 +1,15 @@
 <%- include('partials/head') %>
 <h1 class="sayfa-baslik"><%= il ? (ilce ? ilce.ad + ', ' + il.ad : il.ad) + ' İlanları' : 'İlanlar' %> <small>(<%= toplam %> sonuç)</small></h1>
 
-<form class="filtre" method="get" action="/ilanlar">
+<form class="filtre" method="get" action="/ilanlar" id="filtreForm">
   <div class="arama">
     <input type="search" name="q" value="<%= filtre.q %>" placeholder="🔍 İlan başlığı veya açıklamasında ara..." aria-label="Ara">
     <button class="btn btn-yesil">Ara</button>
   </div>
-  <div class="filtre-kutu">
+  <button type="button" class="filtre-ac" aria-expanded="<%= ekFiltre ? 'true' : 'false' %>" aria-controls="filtreKutu" data-filtre-ac>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg> Filtreler<% if (ekFiltre) { %> <span class="filtre-nokta" aria-label="aktif"></span><% } %>
+  </button>
+  <div class="filtre-kutu<%= ekFiltre ? ' acik' : '' %>" id="filtreKutu">
     <label>Sırala
       <select name="sirala">
         <% [['yeni','En Yeni'],['eski','En Eski'],['fiyat-artan','Fiyat (Düşükten Yükseğe)'],['fiyat-azalan','Fiyat (Yüksekten Düşüğe)'],['populer','En Çok Görüntülenen']].forEach(function (s) { %>
@@ -14,7 +17,7 @@
         <% }) %>
       </select>
     </label>
-    <label>İl / İlçe
+    <label class="filtre-konum">İl / İlçe
       <span class="select-ikili"><%- include('partials/location-select', { secIl: filtre.il, secIlce: filtre.ilce, ilBos: 'Tüm Türkiye', ilceBos: 'Tüm İlçeler' }) %></span>
     </label>
     <label>Kategori
@@ -30,9 +33,32 @@
         <option value="takas" <%= filtre.tip === 'takas' ? 'selected' : '' %>>Takaslık</option>
       </select>
     </label>
+    <label>Ürün Durumu
+      <select name="durum">
+        <option value="">Hepsi</option>
+        <% DURUMLAR.forEach(function (d) { %><option value="<%= d[0] %>" <%= filtre.durum === d[0] ? 'selected' : '' %>><%= d[1] %></option><% }) %>
+      </select>
+    </label>
+    <label>Fiyat (TL)
+      <span class="fiyat-aralik"><input name="fmin" inputmode="numeric" placeholder="En az" value="<%= filtre.fmin != null ? filtre.fmin : '' %>" aria-label="En az fiyat"><span>–</span><input name="fmax" inputmode="numeric" placeholder="En çok" value="<%= filtre.fmax != null ? filtre.fmax : '' %>" aria-label="En çok fiyat"></span>
+    </label>
     <button class="btn btn-yesil filtre-btn">Filtrele</button>
   </div>
 </form>
+
+<% if (filtre.q || filtre.il || filtre.kategori) { %>
+  <% if (!user) { %>
+    <p class="arama-kaydet-satir"><a href="/giris?next=<%= encodeURIComponent(path + '?' + new URLSearchParams(query).toString()) %>">🔔 Giriş yap, bu aramaya uygun ilan çıkınca haber verelim</a></p>
+  <% } else if (aramaKayitli) { %>
+    <p class="arama-kaydet-satir">🔔 Bu arama kayıtlı. <a href="/aramalarim">Aramalarım</a></p>
+  <% } else { %>
+    <form method="post" action="/aramalarim" class="arama-kaydet-satir">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <% ['q','il','ilce','kategori','tip','durum','fmin','fmax'].forEach(function (k) { if (filtre[k] != null && filtre[k] !== '') { %><input type="hidden" name="<%= k %>" value="<%= filtre[k] %>"><% } }) %>
+      <button class="btn btn-cizgi btn-mini">🔔 Bu aramayı kaydet, yeni ilan çıkınca haber ver</button>
+    </form>
+  <% } %>
+<% } %>
 
 <% if (reklamlar) { %>
   <%- include('partials/ad-slots', { reklamlar, reklamIl: il.slug, reklamIlce: ilce ? ilce.slug : '', reklamKonum: ilce ? ilce.ad : il.ad }) %>

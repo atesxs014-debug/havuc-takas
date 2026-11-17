@@ -1,0 +1,16 @@
+<%- include('partials/head') %>
+<h1 class="sayfa-baslik">Kayıtlı Aramalarım</h1>
+<p class="kucuk">Bu aramalara uyan yeni bir ilan çıkınca 🔔 zile bildirim düşer, ayrıca günde bir e-posta özeti gönderilir.</p>
+<% if (aramalar.length) { %>
+  <ul class="arama-liste">
+    <% aramalar.forEach(function (s) { %>
+      <li>
+        <a href="<%= aramaUrl(s) %>"><strong><%= aramaAdi(s) %></strong><small><%= tarih(s.created_at) %> tarihinde kaydedildi</small></a>
+        <form method="post" action="/aramalarim/<%= s.id %>/sil"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-cizgi btn-mini kirmizi" aria-label="Aramayı sil">Sil</button></form>
+      </li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <div class="bos-durum"><p>Henüz kayıtlı araman yok. İlanlar sayfasında bir arama yap ve "Bu aramayı kaydet" butonuna bas.</p><a class="btn btn-yesil" href="/ilanlar">Aramaya başla</a></div>
+<% } %>
+<%- include('partials/foot') %>

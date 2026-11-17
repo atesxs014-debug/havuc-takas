@@ -1,6 +1,6 @@
 // Havuç Takas service worker: statik dosyaları önbelleğe alır, çevrimdışıyken uyarı sayfası gösterir.
-const SURUM = 'havuc-v5';
-const ONBELLEK = ['/cevrimdisi', '/static/css/style.css?v=3', '/static/js/app.js?v=3', '/static/img/havuc.svg', '/static/img/icon-192.png'];
+const SURUM = 'havuc-v6';
+const ONBELLEK = ['/cevrimdisi', '/static/css/style.css?v=4', '/static/js/app.js?v=4', '/static/img/havuc.svg', '/static/img/icon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(SURUM).then((c) => c.addAll(ONBELLEK)).then(() => self.skipWaiting()));

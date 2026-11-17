@@ -26,9 +26,10 @@ const ilanlar = [
   ['iPhone 12 128GB - Takaslık', 'Pil sağlığı %86, ekranı çiziksiz. Android telefon ile takas düşünürüm.', 'elektronik', null, 1, 'izmir', 'karabaglar', 342],
   ['Az Kullanılmış Dağ Bisikleti', 'Neredeyse yeni, 6 ay kullanıldı. Vites sorunsuz çalışıyor.', 'spor-outdoor', 3500, 0, 'izmir', 'buca', 131],
 ];
-const ins = db.prepare(`INSERT INTO listings (user_id, title, description, category, price, is_swap, il, ilce, views, created_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?))`);
-ilanlar.forEach((l, i) => ins.run(user.id, ...l, `-${(ilanlar.length - i) * 7} minutes`));
+const ins = db.prepare(`INSERT INTO listings (user_id, title, description, category, price, is_swap, il, ilce, views, created_at, condition, expires_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', ?), ?, datetime('now', '+30 days'))`);
+const durumlar = ['iyi', 'az', 'iyi', 'iyi', 'kullanilmis', 'az'];
+ilanlar.forEach((l, i) => ins.run(user.id, ...l, `-${(ilanlar.length - i) * 7} minutes`, durumlar[i % durumlar.length]));
 
 db.prepare(`INSERT INTO ads (il, ilce, slot, business_name, description, phone, address, contact_name, contact_email, months,
   status, start_date, end_date, ref_code, paid) VALUES ('izmir', 'buca', 1, 'Örnek Fırın (demo)', 'Bu bir örnek reklamdır. Yönetim panelinden kaldırabilirsiniz.',

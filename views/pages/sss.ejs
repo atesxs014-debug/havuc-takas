@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<article class="metin sss">
+<h1>Sıkça Sorulan Sorular</h1>
+<% SSS.forEach(function (b) { %>
+  <h2><%= b.baslik %></h2>
+  <% b.sorular.forEach(function (s) { %>
+    <details class="sss-madde"><summary><%= s[0] %></summary><p><%= s[1] %></p></details>
+  <% }) %>
+<% }) %>
+<p class="kucuk">Cevabını bulamadın mı? <a href="/iletisim">Bize yaz</a>.</p>
+</article>
+<%- include('../partials/foot') %>

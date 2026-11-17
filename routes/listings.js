@@ -8,6 +8,9 @@ const { rateLimit, turnstile } = require('../lib/security');
 const { getIl, getIlce } = require('../lib/locations');
 const { isKategori, getKategori } = require('../lib/categories');
 const { getSlots } = require('../lib/ads');
+const { DURUMLAR, DURUM_AD, isDurum } = require('../lib/durum');
+const bildirim = require('../lib/bildirim');
+const ILAN_GUN = 30;
 
 const router = express.Router();
 const SAYFA_BOYUTU = 24;
@@ -28,6 +31,11 @@ function renderListings(req, res, preset = {}) {
   const sirala = SIRALAMA[req.query.sirala] ? req.query.sirala : 'yeni';
   const tip = ['satilik', 'takas'].includes(req.query.tip) ? req.query.tip : '';
   const sayfa = Math.max(1, parseInt(req.query.sayfa, 10) || 1);
+  const durum = isDurum(req.query.durum) ? req.query.durum : '';
+  const tlSayi = (v) => { const n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10); return Number.isFinite(n) ? n : null; };
+  let fmin = tlSayi(req.query.fmin);
+  let fmax = tlSayi(req.query.fmax);
+  if (fmin != null && fmax != null && fmin > fmax) [fmin, fmax] = [fmax, fmin];
 
   const where = ["l.status = 'active'"];
   const params = [];
@@ -36,6 +44,9 @@ function renderListings(req, res, preset = {}) {
   if (kategori) { where.push('l.category = ?'); params.push(kategori); }
   if (tip === 'satilik') where.push('l.price IS NOT NULL');
   if (tip === 'takas') where.push('l.is_swap = 1');
+  if (durum) { where.push('l.condition = ?'); params.push(durum); }
+  if (fmin != null) { where.push('l.price >= ?'); params.push(fmin); }
+  if (fmax != null) { where.push('l.price <= ?'); params.push(fmax); }
   if (ara) {
     // SQLite yalnızca İngilizce harfleri küçültebiliyor; Türkçe için kendi fonksiyonumuzla karşılaştırıyoruz
     where.push("(ara_norm(l.title) LIKE ? ESCAPE '\\' OR ara_norm(l.description) LIKE ? ESCAPE '\\')");
@@ -45,7 +56,7 @@ function renderListings(req, res, preset = {}) {
   const w = where.join(' AND ');
   const toplam = db.prepare(`SELECT COUNT(*) AS n FROM listings l WHERE ${w}`).get(...params).n;
   const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYUTU));
-  const ilanlar = db.prepare(`SELECT l.* FROM listings l WHERE ${w} ORDER BY ${SIRALAMA[sirala]} LIMIT ? OFFSET ?`)
+  const ilanlar = db.prepare(`SELECT l.* FROM listings l WHERE ${w} ORDER BY (l.featured_until > datetime('now')) DESC, ${SIRALAMA[sirala]} LIMIT ? OFFSET ?`)
     .all(...params, SAYFA_BOYUTU, (sayfa - 1) * SAYFA_BOYUTU);
 
   // Reklam alanları: ilçe seçiliyse ilçenin, sadece il seçiliyse ilin 4 alanı
@@ -58,9 +69,13 @@ function renderListings(req, res, preset = {}) {
     description: konum ? `${konum} bölgesindeki komisyonsuz ikinci el ve takas ilanları, yerel işletmeler.` : 'Türkiye genelinde komisyonsuz ikinci el ve takas ilanları.',
     // Filtreli/aramalı sayfaları dizine ekletme; temiz il/ilçe sayfası kanonik olsun
     canonical: base + (ilce ? `/il/${il.slug}/${ilce.slug}` : il ? `/il/${il.slug}` : '/ilanlar') + (sayfa > 1 ? `?sayfa=${sayfa}` : ''),
-    noindex: !!(ara || kategori || tip || sirala !== 'yeni'),
+    noindex: !!(ara || kategori || tip || durum || fmin != null || fmax != null || sirala !== 'yeni'),
     ilanlar, toplam, sayfa, sayfaSayisi,
-    filtre: { il: il ? il.slug : '', ilce: ilce ? ilce.slug : '', kategori, q: ara, sirala, tip },
+    filtre: { il: il ? il.slug : '', ilce: ilce ? ilce.slug : '', kategori, q: ara, sirala, tip, durum, fmin, fmax },
+    ekFiltre: !!(durum || fmin != null || fmax != null || tip || kategori || sirala !== 'yeni'),
+    aramaKayitli: req.user ? bildirim.aramalar(req.user.id).some((s) => s.q === ara && s.il === (il ? il.slug : '') && s.ilce === (ilce ? ilce.slug : '')
+      && s.kategori === kategori && s.tip === tip && s.durum === durum && s.fmin === fmin && s.fmax === fmax) : false,
+    DURUMLAR,
     il, ilce, reklamlar,
   });
 }
@@ -71,7 +86,7 @@ router.get('/il/:il/:ilce', (req, res, next) =>
   getIlce(req.params.il, req.params.ilce) ? renderListings(req, res, { il: req.params.il, ilce: req.params.ilce }) : next());
 
 // ---- İlan detay ----
-const getListing = db.prepare(`SELECT l.*, u.name AS seller_name, u.created_at AS seller_since,
+const getListing = db.prepare(`SELECT l.*, u.name AS seller_name, u.created_at AS seller_since, u.banned_at AS seller_banned,
   (SELECT COUNT(*) FROM listings x WHERE x.user_id = l.user_id AND x.status = 'active') AS seller_count,
   (SELECT ROUND(AVG(score), 1) FROM reviews r WHERE r.seller_id = l.user_id) AS seller_rating,
   (SELECT COUNT(*) FROM reviews r WHERE r.seller_id = l.user_id) AS seller_reviews
@@ -88,7 +103,7 @@ router.get('/ilan/:id', (req, res, next) => {
   if (!ilan) return next();
   const isOwner = !!(req.user && req.user.id === ilan.user_id);
   const isAdmin = !!(req.user && req.user.is_admin);
-  if (['removed', 'pending', 'rejected'].includes(ilan.status) && !isOwner && !isAdmin) return next();
+  if ((['removed', 'pending', 'rejected', 'banned'].includes(ilan.status) || ilan.seller_banned) && !isOwner && !isAdmin) return next();
 
   const canonical = h.ilanUrl(ilan);
   if (req.path !== canonical) return res.redirect(301, canonical);
@@ -111,7 +126,7 @@ router.get('/ilan/:id', (req, res, next) => {
     description: ilan.description.slice(0, 500),
     category: k.ad,
     image: fotolar.length ? fotolar.map((f) => `${base}/uploads/${f.file}`) : [`${base}/static/img/og.png`],
-    itemCondition: 'https://schema.org/UsedCondition',
+    itemCondition: ilan.condition === 'sifir' ? 'https://schema.org/NewCondition' : ilan.condition === 'tamirlik' ? 'https://schema.org/DamagedCondition' : 'https://schema.org/UsedCondition',
   };
   if (ilan.price != null) {
     jsonLd.offers = {
@@ -130,7 +145,10 @@ router.get('/ilan/:id', (req, res, next) => {
     ogType: 'product',
     noindex: ilan.status !== 'active',
     jsonLd,
-    ilan, isOwner, fotolar, kategori: k,
+    ilan, isOwner, fotolar, kategori: k, durumAd: DURUM_AD[ilan.condition] || '',
+    vitrinde: !!(ilan.featured_until && new Date(ilan.featured_until.replace(' ', 'T') + 'Z') > new Date()),
+    vitrin: isOwner ? require('../lib/vitrin').ayarlar() : null,
+    vitrinAcik: require('../lib/vitrin').acik(),
     favSayisi: favCount.get(id).n,
     kargo: ilan.shipping && ilan.price != null ? {
       tutar: require('../lib/orders').hesapla(ilan),
@@ -155,6 +173,7 @@ function readForm(req) {
     price: tur === 'takas' ? null : fiyatRaw ? parseInt(fiyatRaw, 10) : null,
     shipping: req.body.shipping && tur !== 'takas' ? 1 : 0,
     package_size: ['kucuk', 'orta', 'buyuk'].includes(req.body.package_size) ? req.body.package_size : 'orta',
+    condition: isDurum(req.body.condition) ? req.body.condition : '',
   };
 }
 
@@ -171,6 +190,7 @@ function validate(f) {
   if (f.title.length < 5) return 'Başlık en az 5 karakter olmalı.';
   if (f.description.length < 10) return 'Açıklama en az 10 karakter olmalı.';
   if (!f.category) return 'Bir kategori seçin.';
+  if (!f.condition) return 'Ürünün durumunu seçin.';
   if (!getIlce(f.il, f.ilce)) return 'İl ve ilçe seçin.';
   if (f.tur !== 'takas' && (f.price == null || f.price < 1 || f.price > 100000000)) return 'Geçerli bir fiyat girin veya "Sadece takas" seçin.';
   return null;
@@ -187,7 +207,7 @@ async function savePhotos(listingId, files, startSort) {
 function kargoBilgi(req) {
   const orders = require('../lib/orders');
   const acc = db.prepare('SELECT sub_merchant_key FROM payout_accounts WHERE user_id = ?').get(req.user.id);
-  return { kargoAcik: require('../lib/payments').kargoAcik(), hesapHazir: !!(acc && acc.sub_merchant_key), PAKETLER: orders.PAKETLER, kargoAyar: orders.ayarlar() };
+  return { kargoAcik: require('../lib/payments').kargoAcik(), hesapHazir: !!(acc && acc.sub_merchant_key), PAKETLER: orders.PAKETLER, kargoAyar: orders.ayarlar(), DURUMLAR };
 }
 
 const insImage = db.prepare('INSERT INTO listing_images (listing_id, file, thumb, sort) VALUES (?, ?, ?, ?)');
@@ -197,8 +217,8 @@ router.get('/ilan-ver', h.requireLogin, h.requireVerified, (req, res) => {
   res.render('listing-form', { title: 'Ücretsiz İlan Ver', form: { tur: 'satilik', package_size: 'orta' }, edit: false, fotolar: [], MAX_FOTO: images.MAX_FOTO, noindex: true, ...kargoBilgi(req) });
 });
 
-const insertListing = db.prepare(`INSERT INTO listings (user_id, title, description, category, price, is_swap, il, ilce, status, mod_reason, shipping, package_size)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+const insertListing = db.prepare(`INSERT INTO listings (user_id, title, description, category, price, is_swap, il, ilce, status, mod_reason, shipping, package_size, condition, expires_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+${ILAN_GUN} days'))`);
 
 router.post('/ilan-ver', h.requireLogin, h.requireVerified, rateLimit('ilan', 20, 60 * 24), images.parse('photos', images.MAX_FOTO),
   h.verifyCsrf, turnstile, async (req, res, next) => {
@@ -211,7 +231,7 @@ router.post('/ilan-ver', h.requireLogin, h.requireVerified, rateLimit('ilan', 20
       const hits = moderation.check(form.title, form.description);
       const status = hits.length ? 'pending' : 'active';
       const info = insertListing.run(req.user.id, form.title, form.description, form.category, form.price,
-        form.tur === 'satilik' ? 0 : 1, form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size);
+        form.tur === 'satilik' ? 0 : 1, form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, form.condition);
       const id = Number(info.lastInsertRowid);
       try {
         await savePhotos(id, req.files, 0);
@@ -220,6 +240,7 @@ router.post('/ilan-ver', h.requireLogin, h.requireVerified, rateLimit('ilan', 20
         h.flash(req, 'error', 'Bazı fotoğraflar okunamadı. İlanı düzenleyerek tekrar ekleyebilirsin.');
       }
       setCover.run(id, id);
+      if (!hits.length) bildirim.yeniIlan(db.prepare('SELECT * FROM listings WHERE id = ?').get(id));
       if (hits.length) {
         notify.listingPending({ id, title: form.title, mod_reason: hits.join(', ') }, req.user.id);
         if (!req.session.flash) h.flash(req, 'info', 'İlanın kısa bir incelemeden sonra yayına girecek. Onaylanınca e-posta ile haber vereceğiz.');
@@ -234,20 +255,20 @@ const ownListing = db.prepare('SELECT * FROM listings WHERE id = ? AND user_id =
 
 router.get('/ilan/:id/duzenle', h.requireLogin, (req, res, next) => {
   const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
-  if (!l || l.status === 'removed') return next();
+  if (!l || ['removed', 'banned'].includes(l.status)) return next();
   const form = { ...l, tur: l.price == null ? 'takas' : l.is_swap ? 'ikisi' : 'satilik' };
   res.render('listing-form', { title: 'İlanı Düzenle', form, edit: true, fotolar: getImages.all(l.id), MAX_FOTO: images.MAX_FOTO, noindex: true, ...kargoBilgi(req) });
 });
 
 const updateListing = db.prepare(`UPDATE listings SET title = ?, description = ?, category = ?, price = ?, is_swap = ?,
-  il = ?, ilce = ?, status = ?, mod_reason = ?, shipping = ?, package_size = ? WHERE id = ? AND user_id = ?`);
+  il = ?, ilce = ?, status = ?, mod_reason = ?, shipping = ?, package_size = ?, condition = ? WHERE id = ? AND user_id = ?`);
 const delImage = db.prepare('DELETE FROM listing_images WHERE id = ? AND listing_id = ?');
 const imgById = db.prepare('SELECT * FROM listing_images WHERE id = ? AND listing_id = ?');
 
 router.post('/ilan/:id/duzenle', h.requireLogin, images.parse('photos', images.MAX_FOTO), h.verifyCsrf, async (req, res, next) => {
   try {
     const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
-    if (!l || l.status === 'removed') return next();
+    if (!l || ['removed', 'banned'].includes(l.status)) return next();
     const form = { ...readForm(req), id: l.id };
     const mevcut = getImages.all(l.id);
     const silinecek = [].concat(req.body.remove_img || []).map(Number);
@@ -273,7 +294,7 @@ router.post('/ilan/:id/duzenle', h.requireLogin, images.parse('photos', images.M
     if (hits.length && ['active', 'pending'].includes(l.status)) status = 'pending';
     else if (!hits.length && l.status === 'pending') status = 'active';
     updateListing.run(form.title, form.description, form.category, form.price, form.tur === 'satilik' ? 0 : 1,
-      form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, l.id, req.user.id);
+      form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, form.condition, l.id, req.user.id);
     setCover.run(l.id, l.id);
     if (status === 'pending' && l.status !== 'pending') notify.listingPending({ id: l.id, title: form.title, mod_reason: hits.join(', ') }, req.user.id);
     h.flash(req, status === 'pending' ? 'info' : 'success', status === 'pending' ? 'İlan güncellendi ve incelemeye alındı.' : 'İlan güncellendi.');
@@ -281,14 +302,56 @@ router.post('/ilan/:id/duzenle', h.requireLogin, images.parse('photos', images.M
   } catch (e) { next(e); }
 });
 
-const setStatus = db.prepare('UPDATE listings SET status = ? WHERE id = ? AND user_id = ?');
+const setStatus = db.prepare(`UPDATE listings SET status = ?,
+  expires_at = CASE WHEN ? = 'active' THEN datetime('now', '+${ILAN_GUN} days') ELSE expires_at END,
+  expiry_reminded = CASE WHEN ? = 'active' THEN 0 ELSE expiry_reminded END WHERE id = ? AND user_id = ?`);
 router.post('/ilan/:id/durum', h.requireLogin, h.verifyCsrf, (req, res, next) => {
   const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
-  if (!l || ['pending', 'rejected'].includes(l.status)) return next();
+  if (!l || ['pending', 'rejected', 'banned'].includes(l.status)) return next();
   const status = { sold: 'sold', active: 'active', removed: 'removed' }[req.body.status];
-  if (status) setStatus.run(status, l.id, req.user.id);
-  h.flash(req, 'success', { sold: 'İlan "takas edildi / satıldı" olarak işaretlendi. Alıcın seni artık puanlayabilir.', active: 'İlan tekrar yayında.', removed: 'İlan kaldırıldı.' }[status] || 'Güncellendi.');
+  if (status) setStatus.run(status, status, status, l.id, req.user.id);
+  h.flash(req, 'success', { sold: 'İlan "takas edildi / satıldı" olarak işaretlendi. Alıcın seni artık puanlayabilir.', active: `İlan tekrar yayında. ${ILAN_GUN} gün boyunca görünecek.`, removed: 'İlan kaldırıldı.' }[status] || 'Güncellendi.');
   res.redirect(status === 'removed' ? '/hesabim' : h.ilanUrl(l));
+});
+
+// ---- İlan yenileme (30 gün daha) ----
+// E-postadaki bağlantı GET ile gelir: onay sayfası gösterilir, yenileme POST ile yapılır.
+router.get('/ilan/:id/yenile', h.requireLogin, (req, res, next) => {
+  const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
+  if (!l || !['active', 'expired'].includes(l.status)) return next();
+  res.render('listing-renew', { title: 'İlanı yenile', ilan: l, gun: ILAN_GUN, noindex: true });
+});
+router.post('/ilan/:id/yenile', h.requireLogin, h.verifyCsrf, (req, res, next) => {
+  const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
+  if (!l || !['active', 'expired'].includes(l.status)) return next();
+  setStatus.run('active', 'active', 'active', l.id, req.user.id);
+  h.flash(req, 'success', `İlanın yenilendi, ${ILAN_GUN} gün daha yayında. 🥕`);
+  res.redirect(h.ilanUrl(l));
+});
+
+// ---- Kayıtlı arama ----
+router.post('/aramalarim', h.requireLogin, rateLimit('arama-kaydet', 30, 60), h.verifyCsrf, (req, res) => {
+  const tlSayi = (v) => { const n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10); return Number.isFinite(n) ? n : null; };
+  const il = getIl(h.str(req.body.il, 60));
+  const f = {
+    q: h.str(req.body.q, 100), il: il ? il.slug : '', ilce: il && getIlce(il.slug, h.str(req.body.ilce, 60)) ? h.str(req.body.ilce, 60) : '',
+    kategori: isKategori(req.body.kategori) ? req.body.kategori : '', tip: ['satilik', 'takas'].includes(req.body.tip) ? req.body.tip : '',
+    durum: isDurum(req.body.durum) ? req.body.durum : '', fmin: tlSayi(req.body.fmin), fmax: tlSayi(req.body.fmax),
+  };
+  const back = bildirim.aramaUrl(f);
+  if (!f.q && !f.il && !f.kategori) { h.flash(req, 'error', 'Kaydetmek için bir kelime, il veya kategori seç.'); return res.redirect(back); }
+  const r = bildirim.aramaKaydet(req.user.id, f);
+  h.flash(req, r === 'sinir' ? 'error' : 'success', r === 'ok' ? '🔔 Arama kaydedildi. Uygun ilan çıkınca sana haber vereceğiz.'
+    : r === 'var' ? 'Bu arama zaten kayıtlı.' : `En fazla ${bildirim.ARAMA_SINIRI} arama kaydedebilirsin. Önce eskilerden birini sil.`);
+  res.redirect(back);
+});
+router.get('/aramalarim', h.requireLogin, (req, res) => {
+  res.render('searches', { title: 'Kayıtlı Aramalarım', aramalar: bildirim.aramalar(req.user.id), aramaAdi: bildirim.aramaAdi, aramaUrl: bildirim.aramaUrl, noindex: true });
+});
+router.post('/aramalarim/:id/sil', h.requireLogin, h.verifyCsrf, (req, res) => {
+  db.prepare('DELETE FROM saved_searches WHERE id = ? AND user_id = ?').run(parseInt(req.params.id, 10) || 0, req.user.id);
+  h.flash(req, 'success', 'Arama silindi.');
+  res.redirect('/aramalarim');
 });
 
 // ---- Şikayet ----

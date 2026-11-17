@@ -14,6 +14,12 @@
         <% kategoriler.forEach(function (k) { %><option value="<%= k.slug %>" <%= form.category === k.slug ? 'selected' : '' %>><%= k.ad %></option><% }) %>
       </select>
     </label>
+    <label>Ürünün durumu
+      <select name="condition" required>
+        <option value="">Seçin</option>
+        <% DURUMLAR.forEach(function (d) { %><option value="<%= d[0] %>" <%= form.condition === d[0] ? 'selected' : '' %>><%= d[1] %></option><% }) %>
+      </select>
+    </label>
     <fieldset class="tur">
       <legend>İlan türü</legend>
       <label class="radio"><input type="radio" name="tur" value="satilik" <%= form.tur === 'satilik' ? 'checked' : '' %>> Satılık</label>

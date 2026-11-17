@@ -54,6 +54,12 @@ router.post('/giris', rateLimit('giris', 10, 15), h.verifyCsrf, turnstile, (req,
   const nextUrl = h.safeNext(req.body.next);
   const remember = !!req.body.remember;
   const user = req.botError ? null : byEmail.get(email);
+  if (!req.botError && user && user.banned_at) {
+    return res.status(403).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: 'Bu hesap kurallarımızı ihlal ettiği için kalıcı olarak engellendi. İtiraz için iletişim sayfasını kullanabilirsin.' });
+  }
+  if (!req.botError && user && user.password_hash === '!') {
+    return res.status(400).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: 'Bu hesap Google ile açıldı. "Google ile devam et" butonunu kullan veya şifreni sıfırla.' });
+  }
   if (req.botError || !user || !bcrypt.compareSync(String(req.body.password || ''), user.password_hash)) {
     return res.status(400).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: req.botError || 'E-posta veya şifre hatalı.' });
   }
@@ -127,7 +133,7 @@ router.post('/sifremi-unuttum', rateLimit('sifre', 5, 60), h.verifyCsrf, turnsti
   const email = h.str(req.body.email, 200).toLowerCase();
   if (req.botError) return res.status(400).render('auth/forgot', { title: 'Şifremi Unuttum', form: { email }, error: req.botError });
   const user = byEmail.get(email);
-  if (user) {
+  if (user && !user.banned_at) {
     const t = tokens.create(user.id, 'reset', 1);
     send({
       to: user.email, subject: 'Şifre sıfırlama', title: 'Şifreni sıfırla',
@@ -173,7 +179,7 @@ router.post('/hesabim/ayarlar', h.requireLogin, h.verifyCsrf, (req, res) => {
   const yeni = String(req.body.new_password || '');
   if (yeni) {
     const u = byId.get(req.user.id);
-    if (!bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) { h.flash(req, 'error', 'Mevcut şifre hatalı, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
+    if (u.password_hash !== '!' && !bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) { h.flash(req, 'error', 'Mevcut şifre hatalı, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
     if (yeni.length < 8) { h.flash(req, 'error', 'Yeni şifre en az 8 karakter olmalı.'); return res.redirect('/hesabim/ayarlar'); }
     if (yeni !== String(req.body.new_password2 || '')) { h.flash(req, 'error', 'Yeni şifreler birbiriyle aynı değil, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
     setPassword.run(bcrypt.hashSync(yeni, 10), req.user.id);
@@ -183,3 +189,4 @@ router.post('/hesabim/ayarlar', h.requireLogin, h.verifyCsrf, (req, res) => {
 });
 
 module.exports = router;
+module.exports.login = login;

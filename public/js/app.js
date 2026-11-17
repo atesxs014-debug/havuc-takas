@@ -221,6 +221,44 @@
     asil.addEventListener('input', kontrol);
   });
 
+  // Telefonda açılır/kapanır filtre paneli
+  document.querySelectorAll('[data-filtre-ac]').forEach(function (b) {
+    var kutu = document.getElementById(b.getAttribute('aria-controls'));
+    if (!kutu) return;
+    b.addEventListener('click', function () {
+      var acik = kutu.classList.toggle('acik');
+      b.setAttribute('aria-expanded', acik ? 'true' : 'false');
+    });
+  });
+
+  // Mesajda fotoğraf: önizleme, kaldırma, boş gönderimi engelleme
+  var mf = document.querySelector('[data-mesaj-form]');
+  if (mf) {
+    var fi = mf.querySelector('[data-mesaj-foto]');
+    var on = mf.querySelector('[data-foto-onizleme]');
+    var ta = mf.querySelector('textarea');
+    fi.addEventListener('change', function () {
+      var f = fi.files && fi.files[0];
+      if (!f) { on.hidden = true; return; }
+      if (f.size > 10 * 1024 * 1024) { alertYok(); fi.value = ''; on.hidden = true; return; }
+      on.querySelector('img').src = URL.createObjectURL(f);
+      on.hidden = false;
+    });
+    function alertYok() { ta.setCustomValidity('Fotoğraf en fazla 10 MB olabilir.'); ta.reportValidity(); setTimeout(function () { ta.setCustomValidity(''); }, 2500); }
+    on.querySelector('[data-foto-kaldir]').addEventListener('click', function () { fi.value = ''; on.hidden = true; });
+    mf.addEventListener('submit', function (e) {
+      if (!ta.value.trim() && !(fi.files && fi.files.length)) {
+        e.preventDefault();
+        ta.setCustomValidity('Bir mesaj yaz ya da fotoğraf ekle.');
+        ta.reportValidity();
+        setTimeout(function () { ta.setCustomValidity(''); }, 2500);
+      }
+    });
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) mf.requestSubmit();
+    });
+  }
+
   // PWA: service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });

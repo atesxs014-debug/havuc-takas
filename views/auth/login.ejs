@@ -4,6 +4,7 @@
   <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
   <form method="post" action="/giris" class="form kart-form">
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+    <%- include('../partials/google-btn') %>
     <label>E-posta<input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
     <label>Şifre<input type="password" name="password" required autocomplete="current-password"></label>
     <div class="giris-alt">

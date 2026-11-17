@@ -4,6 +4,9 @@
 </nav>
 
 <% if (ilan.status === 'pending') { %><div class="flash flash-info">⏳ Bu ilan incelemede, şu an sadece sen<%= user && user.is_admin ? ' ve yöneticiler' : '' %> görebilirsin.<% if (user && user.is_admin && ilan.mod_reason) { %> Yakalanan: <%= ilan.mod_reason %><% } %></div><% } %>
+<% if (ilan.status === 'expired') { %><div class="flash flash-info">⌛ Bu ilanın yayın süresi doldu.<% if (isOwner) { %> <form method="post" action="/ilan/<%= ilan.id %>/yenile" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Tek tıkla 30 gün yenile</button></form><% } %></div><% } %>
+<% if (ilan.status === 'banned' || ilan.seller_banned) { %><div class="flash flash-error">Bu ilanın sahibi engellendiği için ilan yayında değil.</div><% } %>
+<% if (query.vitrin === 'ok') { %><div class="flash flash-success">⭐ Ödemen alındı, ilanın vitrinde!</div><% } else if (query.vitrin === 'hata') { %><div class="flash flash-error">Vitrin ödemesi tamamlanmadı.</div><% } else if (query.vitrin === 'dogrulanamadi') { %><div class="flash flash-error">Ödeme sonucu doğrulanamadı. Kartından çekim yapıldıysa bize ulaş.</div><% } %>
 <% if (ilan.status === 'rejected') { %><div class="flash flash-error">Bu ilan kurallara uymadığı için yayınlanmadı.</div><% } %>
 <div class="detay">
   <div class="detay-sol">
@@ -11,6 +14,7 @@
       <div class="detay-gorsel" style="--r1:<%= kategori.renk[0] %>;--r2:<%= kategori.renk[1] %>">
         <% if (fotolar.length) { %><img src="/uploads/<%= fotolar[0].file %>" alt="<%= ilan.title %>" data-galeri-ana><% } else { %><%- kategori.ikon %><% } %>
         <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi / Satıldı</span><% } %>
+        <% if (vitrinde && ilan.status === 'active') { %><span class="vitrin-rozet buyuk">⭐ Vitrin</span><% } %>
         <% if (fotolar.length > 1) { %>
           <button type="button" class="galeri-ok sol" data-galeri-onceki aria-label="Önceki fotoğraf">‹</button>
           <button type="button" class="galeri-ok sag" data-galeri-sonraki aria-label="Sonraki fotoğraf">›</button>
@@ -42,6 +46,7 @@
       <% if (ilan.price != null) { %><%= fiyat(ilan.price) %><% } %>
       <% if (ilan.is_swap) { %><span class="takas-rozet buyuk"><%= ilan.price != null ? 'Takasa da açık' : 'Takaslık' %></span><% } %>
     </p>
+    <% if (durumAd) { %><p class="durum-satir"><span class="durum-rozet"><%= durumAd %></span></p><% } %>
     <div class="detay-aciklama"><%= ilan.description %></div>
 
     <div class="satici-kart">
@@ -58,6 +63,23 @@
           <% } else { %><button name="status" value="active" class="btn btn-cizgi">Tekrar yayınla</button><% } %>
           <button name="status" value="removed" class="btn btn-cizgi kirmizi" data-confirm="İlan kaldırılsın mı?">🗑 Kaldır</button>
         </form><% } %>
+        <% if (ilan.status === 'active' && ilan.expires_at) { %>
+          <div class="kucuk sure-not">⌛ Yayında: <%= tarih(ilan.expires_at) %> tarihine kadar.
+            <form method="post" action="/ilan/<%= ilan.id %>/yenile" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Şimdi 30 gün uzat</button></form></div>
+        <% } %>
+        <% if (ilan.status === 'active' && vitrin && vitrinAcik) { %>
+          <div class="vitrin-kutu">
+            <% if (vitrinde) { %><p><strong>⭐ İlanın vitrinde</strong> · <%= tarih(ilan.featured_until) %> tarihine kadar. Süreyi uzatabilirsin:</p>
+            <% } else { %><p><strong>⭐ İlanını öne çıkar</strong></p><p class="kucuk">Vitrindeki ilanlar il, ilçe ve arama sonuçlarında en üstte, rozetle görünür.</p><% } %>
+            <form method="post" action="/ilan/<%= ilan.id %>/vitrin" class="vitrin-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <% vitrin.forEach(function (p, i) { %>
+                <label class="vitrin-secenek"><input type="radio" name="gun" value="<%= p.gun %>" <%= i === 0 ? 'checked' : '' %>><span><strong><%= p.gun %> gün</strong><small><%= fiyat(p.fiyat) %></small></span></label>
+              <% }) %>
+              <button class="btn btn-turuncu tam">Kartla öde ve öne çıkar</button>
+            </form>
+          </div>
+        <% } %>
       <% } else { %>
         <% if (kargo && !kargo.engel) { %>
           <div class="kargo-kutu">
