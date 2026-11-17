@@ -68,7 +68,7 @@ router.post('/hesabim/odeme-bilgileri', h.requireLogin, h.requireVerified, rateL
 const getListing = db.prepare(`SELECT l.*, u.name AS seller_name FROM listings l JOIN users u ON u.id = l.user_id WHERE l.id = ?`);
 
 function satinAlinabilir(l, user) {
-  if (!l || l.status !== 'active' || !l.shipping || l.price == null) return 'Bu ilan kargoyla satın alınamıyor.';
+  if (!l || l.status !== 'active' || !l.shipping || !(l.price > 0)) return 'Bu ilan kargoyla satın alınamıyor.';
   if (!provider()) return 'Kargolu satış şu an kapalı.';
   if (user && user.id === l.user_id) return 'Kendi ilanını satın alamazsın.';
   const acc = getAcc.get(l.user_id);
@@ -77,12 +77,22 @@ function satinAlinabilir(l, user) {
   return null;
 }
 
+// Kabul edilmiş fiyat teklifi varsa ürün fiyatı teklif tutarı olur
+function teklifliFiyat(req, l) {
+  const id = parseInt(req.query.teklif || req.body.teklif, 10) || 0;
+  if (!id) return { l, teklif: null };
+  const o = require('../lib/teklif').kabulEdilen(l.id, req.user.id, id);
+  return o ? { l: { ...l, price: o.amount }, teklif: o } : { l, teklif: null, gecersiz: true };
+}
+
 router.get('/ilan/:id/satin-al', h.requireLogin, h.requireVerified, (req, res, next) => {
-  const l = getListing.get(parseInt(req.params.id, 10) || 0);
-  if (!l) return next();
-  const err = satinAlinabilir(l, req.user);
-  if (err) { h.flash(req, 'error', err); return res.redirect(h.ilanUrl(l)); }
-  res.render('orders/checkout', { title: 'Kargoyla Satın Al', ilan: l, tutar: orders.hesapla(l), form: { ship_name: req.user.name, ship_phone: req.user.phone || '' }, noindex: true });
+  const ham = getListing.get(parseInt(req.params.id, 10) || 0);
+  if (!ham) return next();
+  const err = satinAlinabilir(ham, req.user);
+  if (err) { h.flash(req, 'error', err); return res.redirect(h.ilanUrl(ham)); }
+  const { l, teklif, gecersiz } = teklifliFiyat(req, ham);
+  if (gecersiz) { h.flash(req, 'error', 'Bu teklif artık geçerli değil.'); return res.redirect(h.ilanUrl(ham)); }
+  res.render('orders/checkout', { title: 'Kargoyla Satın Al', ilan: l, teklif, tutar: orders.hesapla(l), form: { ship_name: req.user.name, ship_phone: req.user.phone || '' }, noindex: true });
 });
 
 const insOrder = db.prepare(`INSERT INTO orders (listing_id, buyer_id, seller_id, title, item_price, shipping_fee, service_fee, total,
@@ -90,10 +100,12 @@ const insOrder = db.prepare(`INSERT INTO orders (listing_id, buyer_id, seller_id
 
 router.post('/ilan/:id/satin-al', h.requireLogin, h.requireVerified, rateLimit('satin-al', 20, 60), h.verifyCsrf, async (req, res, next) => {
   try {
-    const l = getListing.get(parseInt(req.params.id, 10) || 0);
-    if (!l) return next();
-    const err = satinAlinabilir(l, req.user);
-    if (err) { h.flash(req, 'error', err); return res.redirect(h.ilanUrl(l)); }
+    const ham = getListing.get(parseInt(req.params.id, 10) || 0);
+    if (!ham) return next();
+    const err = satinAlinabilir(ham, req.user);
+    if (err) { h.flash(req, 'error', err); return res.redirect(h.ilanUrl(ham)); }
+    const { l, teklif, gecersiz } = teklifliFiyat(req, ham);
+    if (gecersiz) { h.flash(req, 'error', 'Bu teklif artık geçerli değil.'); return res.redirect(h.ilanUrl(ham)); }
     const form = {
       ship_name: h.str(req.body.ship_name, 80), ship_phone: h.str(req.body.ship_phone, 20),
       ship_il: h.str(req.body.il, 60), ship_ilce: h.str(req.body.ilce, 60), ship_address: h.str(req.body.ship_address, 300),
@@ -105,14 +117,14 @@ router.post('/ilan/:id/satin-al', h.requireLogin, h.requireVerified, rateLimit('
     else if (!getIlce(form.ship_il, form.ship_ilce)) error = 'Teslimat ilini ve ilçesini seç.';
     else if (form.ship_address.length < 15) error = 'Açık adresi (mahalle, sokak, no, daire) yaz.';
     else if (!req.body.onay) error = 'Mesafeli satış ve ödeme koşullarını onayla.';
-    if (error) return res.status(400).render('orders/checkout', { title: 'Kargoyla Satın Al', ilan: l, tutar, form, error, noindex: true });
+    if (error) return res.status(400).render('orders/checkout', { title: 'Kargoyla Satın Al', ilan: l, teklif, tutar, form, error, noindex: true });
 
     const p = provider();
     const info = insOrder.run(l.id, req.user.id, l.user_id, l.title, tutar.urun, tutar.kargo, tutar.hizmet, tutar.toplam,
       form.ship_name, phoneE164(form.ship_phone), form.ship_il, form.ship_ilce, form.ship_address, p.name);
     const id = Number(info.lastInsertRowid);
     const code = 'SP' + String(id).padStart(6, '0');
-    db.prepare('UPDATE orders SET code = ? WHERE id = ?').run(code, id);
+    db.prepare('UPDATE orders SET code = ?, offer_id = ? WHERE id = ?').run(code, teklif ? teklif.id : null, id);
     let o = orders.byId(id);
     orders.setStatus(o, 'odeme_bekliyor', {}, 'Sipariş oluşturuldu');
 

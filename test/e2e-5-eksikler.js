@@ -78,7 +78,7 @@ const { B, ok, sql, run, mails, shot } = require('./helpers');
   await C.setInputFiles('[data-mesaj-foto]', 'fixtures/p3.png');
   ok(await C.locator('[data-foto-onizleme]').isVisible(), 'seçilen fotoğrafın önizlemesi görünüyor');
   await C.fill('.mesaj-yaz textarea', 'Kutusu duruyor mu?');
-  await Promise.all([C.waitForNavigation(), C.click('.mesaj-yaz button.btn')]);
+  await C.click('.mesaj-yaz button.btn'); await C.waitForSelector('.balon-foto img', { timeout: 8000 });
   ok(await C.locator('.balon-foto img').count() === 1, 'mesajda fotoğraf gönderildi');
   await S.goto(`${B}/mesajlar/${lid}/${cid}`);
   ok(await S.locator('.balon-foto img').count() === 1 && (await S.content()).includes('Kutusu duruyor mu?'), 'satıcı fotoğraflı mesajı görüyor');

@@ -1,5 +1,11 @@
 <%- include('partials/head') %>
 <div class="bolum-bas"><h1 class="sayfa-baslik">Bildirimler</h1><a class="kucuk-link" href="/aramalarim">🔎 Kayıtlı aramalarım</a></div>
+<div class="push-kutu" data-push hidden>
+  <div><strong>📱 Telefonuna da bildirim gelsin</strong>
+    <p class="kucuk" data-push-metin>Mesaj, teklif ve sipariş haberleri site kapalıyken de telefonuna ya da bilgisayarına bildirim olarak düşsün.</p></div>
+  <button type="button" class="btn btn-yesil btn-mini" data-push-ac>Bildirimleri aç</button>
+  <button type="button" class="btn btn-cizgi btn-mini" data-push-kapat hidden>Bu cihazda kapat</button>
+</div>
 <% if (liste.length) { %>
   <ul class="bildirim-liste">
     <% liste.forEach(function (b) { %>

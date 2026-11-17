@@ -17,15 +17,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-app.use((req, res, next) => {
-  res.set({
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'SAMEORIGIN',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-  });
-  next();
-});
+app.use(require('./lib/guvenlik').basliklar);
 
 // PWA: service worker kök dizinden sunulmalı
 app.get('/sw.js', (req, res) => {
@@ -55,6 +47,8 @@ app.use(session({
 const getUser = db.prepare('SELECT id, name, email, phone, is_admin, email_verified, notify_email, created_at, google_id, banned_at, password_hash = \'!\' AS no_password FROM users WHERE id = ?');
 const unreadCount = db.prepare('SELECT COUNT(*) AS n FROM messages WHERE receiver_id = ? AND read_at IS NULL');
 const favIds = db.prepare('SELECT listing_id FROM favorites WHERE user_id = ?');
+const teklifSayisi = db.prepare(`SELECT (SELECT COUNT(*) FROM offers o JOIN listings l ON l.id = o.listing_id WHERE o.seller_id = :u AND o.status = 'bekliyor' AND l.status = 'active')
+  + (SELECT COUNT(*) FROM offers o JOIN listings l ON l.id = o.listing_id WHERE o.buyer_id = :u AND o.status = 'karsi' AND l.status = 'active') AS n`);
 
 app.use((req, res, next) => {
   req.user = req.session.userId ? getUser.get(req.session.userId) || null : null;
@@ -66,6 +60,7 @@ app.use((req, res, next) => {
     user: req.user,
     unread: req.user ? unreadCount.get(req.user.id).n : 0,
     bildirimSayisi: req.user ? require('./lib/bildirim').okunmamis(req.user.id) : 0,
+    teklifSayisi: req.user ? teklifSayisi.get({ u: req.user.id }).n : 0,
     favs: req.user ? new Set(favIds.all(req.user.id).map((r) => r.listing_id)) : new Set(),
     csrf: h.csrfToken(req),
     flash: req.session.flash || null,
@@ -107,6 +102,8 @@ app.use(require('./routes/messages'));
 app.use(require('./routes/vitrin'));
 app.use(require('./routes/hesap'));
 app.use(require('./routes/google'));
+app.use(require('./routes/canli'));
+app.use(require('./routes/teklif'));
 app.use(require('./routes/ads'));
 app.use(require('./routes/business'));
 app.use('/yonetim', require('./routes/admin'));

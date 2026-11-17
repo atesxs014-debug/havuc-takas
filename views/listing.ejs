@@ -43,7 +43,7 @@
     </div>
     <p class="detay-meta">📍 <a href="/il/<%= ilan.il %>/<%= ilan.ilce %>"><%= konumAdi(ilan.il, ilan.ilce) %></a> · <%= ilan.views %> görüntülenme · <%= tarih(ilan.created_at) %></p>
     <p class="detay-fiyat">
-      <% if (ilan.price != null) { %><%= fiyat(ilan.price) %><% } %>
+      <% if (ilan.price === 0) { %><span class="bedava-rozet buyuk">🎁 Bedava</span><% } else if (ilan.price != null) { %><%= fiyat(ilan.price) %><% } %>
       <% if (ilan.is_swap) { %><span class="takas-rozet buyuk"><%= ilan.price != null ? 'Takasa da açık' : 'Takaslık' %></span><% } %>
     </p>
     <% if (durumAd) { %><p class="durum-satir"><span class="durum-rozet"><%= durumAd %></span></p><% } %>
@@ -52,11 +52,12 @@
     <div class="satici-kart">
       <div class="satici">
         <span class="avatar"><%= ilan.seller_name.charAt(0).toLocaleUpperCase('tr') %></span>
-        <div><a href="/uye/<%= ilan.user_id %>" class="satici-ad"><strong><%= ilan.seller_name %></strong></a>
+        <div><a href="/uye/<%= ilan.user_id %>" class="satici-ad"><strong><%= ilan.seller_name %></strong></a><% if (guvenilir) { %> <span class="guven-rozet" title="E-postası doğrulanmış, en az 3 değerlendirmede ortalama 4,5 ve üstü puan almış satıcı">✔ Güvenilir satıcı</span><% } %>
           <small><% if (ilan.seller_reviews) { %>⭐ <%= ilan.seller_rating %> (<%= ilan.seller_reviews %> değerlendirme) · <% } %><%= new Date(ilan.seller_since.replace(' ', 'T') + 'Z').getFullYear() %>'den beri üye · <%= ilan.seller_count %> ilan</small></div>
       </div>
       <% if (isOwner) { %>
         <a class="btn btn-yesil tam" href="/ilan/<%= ilan.id %>/duzenle">✏️ İlanı Düzenle</a>
+        <% if (teklif && teklif.bekleyen) { %><a class="teklif-uyari" href="/tekliflerim">🤝 Bu ilana <strong><%= teklif.bekleyen %></strong> teklif cevap bekliyor →</a><% } %>
         <% if (['active', 'sold'].includes(ilan.status)) { %><form method="post" action="/ilan/<%= ilan.id %>/durum" class="sahip-form">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <% if (ilan.status === 'active') { %><button name="status" value="sold" class="btn btn-cizgi">✅ Takas edildi / Satıldı</button>
@@ -92,6 +93,49 @@
           <p class="kucuk">📦 Kargoyla satışa açık · <%= kargo.engel %></p>
         <% } %>
         <a class="btn btn-yesil tam" href="/mesajlar/<%= ilan.id %>/<%= ilan.user_id %>">💬 Satıcıya Mesaj Gönder</a>
+        <% if (teklif) { %>
+          <div class="teklif-kutu" id="teklif">
+            <% if (teklif.girisYok) { %>
+              <a class="btn btn-cizgi tam" href="/giris?next=<%= encodeURIComponent(path) %>">🤝 Teklif ver</a>
+            <% } else { %>
+              <% const son = teklif.son; const acik = son && ['bekliyor', 'karsi'].includes(son.status); %>
+              <% if (son && (acik || son.status === 'kabul')) { %>
+                <p class="teklif-son"><strong>🤝 Teklifin:</strong> <%= son.kind === 'fiyat' ? fiyat(son.amount) : 'Takas önerisi' %> · <%= teklif.DURUMLAR[son.status] %><% if (son.status === 'karsi') { %> (<%= fiyat(son.counter_amount) %>)<% } %> · <a href="/tekliflerim?sekme=giden">Tekliflerim</a></p>
+                <% if (teklif.kabulFiyat && kargo && !kargo.engel) { %><a class="btn btn-turuncu tam" href="/ilan/<%= ilan.id %>/satin-al?teklif=<%= son.id %>">📦 <%= fiyat(son.amount) %> ile kargoyla satın al</a><% } %>
+              <% } %>
+              <% if (!son || !['kabul'].includes(son.status)) { %>
+              <details>
+                <summary class="btn btn-cizgi tam"><%= acik ? '🤝 Yeni teklif ver' : '🤝 Teklif ver' %></summary>
+                <form method="post" action="/ilan/<%= ilan.id %>/teklif" class="form teklif-form">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <% const fiyatOlur = ilan.price > 0; const takasOlur = ilan.is_swap && teklif.takaslik.length; %>
+                  <% if (fiyatOlur && ilan.is_swap) { %>
+                    <div class="teklif-tur">
+                      <label class="radio"><input type="radio" name="kind" value="fiyat" checked> Fiyat teklif et</label>
+                      <label class="radio"><input type="radio" name="kind" value="takas" <%= takasOlur ? '' : 'disabled' %>> Ürünümle takas öner</label>
+                    </div>
+                  <% } else { %><input type="hidden" name="kind" value="<%= fiyatOlur ? 'fiyat' : 'takas' %>"><% } %>
+                  <% if (fiyatOlur) { %>
+                    <label class="teklif-fiyat">Teklifin (TL)<input name="amount" inputmode="numeric" placeholder="<%= Math.round(ilan.price * 0.85) %>" aria-describedby="teklifIpucu"></label>
+                    <small id="teklifIpucu" class="kucuk">İlan fiyatı <%= fiyat(ilan.price) %>. Satıcı kabul ederse <%= ilan.shipping ? 'bu fiyattan kargoyla satın alabilirsin.' : 'teslimatı mesajlaşarak ayarlarsınız.' %></small>
+                  <% } %>
+                  <% if (ilan.is_swap) { %>
+                    <% if (teklif.takaslik.length) { %>
+                      <label class="teklif-takas-sec">Takas önereceğin ilanın<select name="swap_listing_id">
+                        <% teklif.takaslik.forEach(function (x) { %><option value="<%= x.id %>"><%= x.title %></option><% }) %>
+                      </select></label>
+                    <% } else if (!fiyatOlur) { %>
+                      <p class="kucuk">Takas önermek için önce takas edeceğin ürünün ilanını ver. <a href="/ilan-ver">İlan ver</a></p>
+                    <% } %>
+                  <% } %>
+                  <label>Not (isteğe bağlı)<input name="note" maxlength="300" placeholder="Örn. Hafta sonu alabilirim"></label>
+                  <button class="btn btn-yesil tam" <%= !fiyatOlur && !takasOlur ? 'disabled' : '' %>>Teklifi gönder</button>
+                </form>
+              </details>
+              <% } %>
+            <% } %>
+          </div>
+        <% } %>
         <details class="sikayet">
           <summary>🚩 İlanı Şikayet Et</summary>
           <form method="post" action="/ilan/<%= ilan.id %>/sikayet">
@@ -109,6 +153,15 @@
           </form>
         </details>
       <% } %>
+    </div>
+    <div class="paylas" data-paylas data-baslik="<%= ilan.title %>" data-url="<%= canonical %>">
+      <span class="kucuk">Paylaş:</span>
+      <a class="paylas-btn wa" href="https://wa.me/?text=<%= encodeURIComponent(ilan.title + ' ' + canonical) %>" target="_blank" rel="noopener" aria-label="WhatsApp ile paylaş">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.6z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 1c-1.2-.5-2.5-1.8-3-3l1-1-1-2z"/></svg> WhatsApp</a>
+      <button type="button" class="paylas-btn" data-kopyala aria-label="Bağlantıyı kopyala">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> <span>Bağlantıyı kopyala</span></button>
+      <button type="button" class="paylas-btn" data-paylas-yerel hidden aria-label="Paylaş">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg> Diğer</button>
     </div>
     <p class="guvenlik-not">🛡️ Site dışında ön ödeme yapmayın. Kargolu alışverişte yalnızca "Kargoyla Satın Al" butonunu kullanın. Halka açık bir yerde buluşun, ürünü görerek elden teslim alın. <a href="/guvenli-takas">Güvenli takas rehberi</a></p>
   </div>

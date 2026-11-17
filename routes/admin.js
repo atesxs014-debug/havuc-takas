@@ -34,7 +34,7 @@ const SEKMELER = {
   aktif: "SELECT * FROM ads WHERE status = 'active' ORDER BY renew_months IS NULL, end_date",
   gecmis: "SELECT * FROM ads WHERE status IN ('rejected','ended') ORDER BY id DESC LIMIT 200",
 };
-const TABS = ['bekleyen', 'aktif', 'gecmis', 'onay', 'sikayet', 'iletisim', 'siparis', 'ilan', 'uye', 'fiyatlar', 'kargo', 'kelimeler', 'yedek'];
+const TABS = ['grafik', 'bekleyen', 'aktif', 'gecmis', 'onay', 'sikayet', 'iletisim', 'siparis', 'ilan', 'uye', 'fiyatlar', 'kargo', 'kelimeler', 'yedek'];
 
 function backupList() {
   try {
@@ -78,6 +78,7 @@ router.get('/', (req, res) => {
     vitrinCiro: db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(price),0) AS toplam FROM featured_orders WHERE status = 'odendi'").get(),
     vitrinAktif: db.prepare("SELECT COUNT(*) AS n FROM listings WHERE status = 'active' AND featured_until > datetime('now')").get().n });
   else if (tab === 'fiyatlar') Object.assign(extra, { gruplar: pricing.GRUPLAR, fiyatTablo: pricing.tablo(), ozel: pricing.overrides() });
+  else if (tab === 'grafik') { const ist = require('../lib/istatistik'); Object.assign(extra, { grafikler: ist.hepsi(), grafikSvg: ist.svg, grafikGun: ist.GUN, sayi: ist.sayi }); }
   else if (tab === 'kelimeler') extra.kelimeler = moderation.wordsText();
   else if (tab === 'yedek') Object.assign(extra, { yedekler: backupList(), yedekDir: config.backup.dir, keep: config.backup.keepDays });
   res.render('admin', { title: 'Yönetim Paneli', tab, rows, c: counts.get(), SLOT_SAYISI, ...extra });

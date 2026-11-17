@@ -2,7 +2,7 @@
 <section class="profil">
   <span class="avatar buyuk"><%= uye.name.charAt(0).toLocaleUpperCase('tr') %></span>
   <div>
-    <h1 class="sayfa-baslik"><%= uye.name %></h1>
+    <h1 class="sayfa-baslik"><%= uye.name %><% if (guvenilir) { %> <span class="guven-rozet" title="E-postası doğrulanmış, en az 3 değerlendirmede ortalama 4,5 ve üstü puan almış satıcı">✔ Güvenilir satıcı</span><% } %></h1>
     <p class="kucuk"><%= new Date(uye.created_at.replace(' ', 'T') + 'Z').getFullYear() %>'den beri üye · <%= satilan %> tamamlanan takas/satış</p>
     <p class="puan-ozet"><% if (ozet.n) { %><span class="yildiz-goster" style="--p:<%= ozet.ort / 5 * 100 %>%">★★★★★</span> <strong><%= ozet.ort %></strong> <span class="kucuk">(<%= ozet.n %> değerlendirme)</span><% } else { %><span class="kucuk">Henüz değerlendirme yok</span><% } %></p>
   </div>

@@ -74,9 +74,9 @@ const { B, UPLOADS, ok, lastLink, shot } = require('./helpers');
   await A.goto(B + '/yonetim?tab=aktif'); await A.click('button:has-text("Ödeme alındı → Uzat")'); ok((await A.locator('.flash').textContent()).includes('uzatıldı'), 'yönetici uzatmayı onayladı');
   // 6) favori + mesaj + puan
   await U.goto(gitarUrl); await U.click('.fav-btn'); await U.goto(B + '/favorilerim'); ok(await U.locator('.kart').count() === 1, 'favorilere eklendi');
-  await U.goto(gitarUrl); await U.click('text=Satıcıya Mesaj Gönder'); await U.fill('[name=body]', 'Merhaba, gitar duruyor mu?'); await Promise.all([U.waitForNavigation(), U.click('.mesaj-yaz button.btn')]);
+  await U.goto(gitarUrl); await U.click('text=Satıcıya Mesaj Gönder'); await U.fill('[name=body]', 'Merhaba, gitar duruyor mu?'); await U.click('.mesaj-yaz button.btn'); await U.waitForFunction(() => document.querySelector('.mesaj-yaz textarea').value === '');
   ok(lastLink('admin@test.com', /mesaj gönderdi/) !== null, 'satıcıya yeni mesaj e-postası gitti');
-  await A.goto(B + '/mesajlar'); await A.click('.konusmalar a'); await A.fill('[name=body]', 'Evet duruyor, yarın Buca metroda buluşalım.'); await Promise.all([A.waitForNavigation(), A.click('.mesaj-yaz button.btn')]);
+  await A.goto(B + '/mesajlar'); await A.click('.konusmalar a'); await A.fill('[name=body]', 'Evet duruyor, yarın Buca metroda buluşalım.'); await A.click('.mesaj-yaz button.btn'); await A.waitForFunction(() => document.querySelector('.mesaj-yaz textarea').value === '');
   await A.goto(gitarUrl); await A.click('button[value=sold]');
   await U.goto(B + '/mesajlar'); await U.click('.konusmalar a'); ok(await U.locator('.puan-form').count() === 1, 'satış sonrası puanlama formu çıktı');
   await U.click('label[for=y5]'); await U.fill('.puan-form [name=comment]', 'Çok ilgili satıcı, teşekkürler!'); await U.click('.puan-form button');
