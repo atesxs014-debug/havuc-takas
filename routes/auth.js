@@ -26,6 +26,9 @@ function login(req, user, cb, remember = true) {
   req.session.regenerate((err) => {
     if (err) return cb(err);
     req.session.userId = user.id;
+    const guvenlik = require('../lib/guvenlik');
+    guvenlik.basarili(user.id);
+    try { guvenlik.cihazKontrol(req, req.res, user); } catch (e) { console.error('Cihaz kontrolü:', e.message); }
     if (remember) req.session.cookie.maxAge = HATIRLA_MS;
     else req.session.cookie.expires = false;
     cb();
@@ -54,7 +57,18 @@ router.post('/giris', rateLimit('giris', 10, 15), h.verifyCsrf, turnstile, (req,
   const nextUrl = h.safeNext(req.body.next);
   const remember = !!req.body.remember;
   const user = req.botError ? null : byEmail.get(email);
+  if (!req.botError && user && user.banned_at) {
+    return res.status(403).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: 'Bu hesap kurallarımızı ihlal ettiği için kalıcı olarak engellendi. İtiraz için iletişim sayfasını kullanabilirsin.' });
+  }
+  if (!req.botError && user && user.password_hash === '!') {
+    return res.status(400).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: 'Bu hesap Google ile açıldı. "Google ile devam et" butonunu kullan veya şifreni sıfırla.' });
+  }
+  const guvenlik = require('../lib/guvenlik');
+  const kilitView = (dk) => res.status(429).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember },
+    error: `Çok sayıda hatalı deneme yapıldığı için bu hesap ${dk} dakika kilitlendi. Şifreni unuttuysan sıfırlayabilirsin.` });
+  if (!req.botError && user && guvenlik.kilitli(user)) return kilitView(guvenlik.kilitli(user));
   if (req.botError || !user || !bcrypt.compareSync(String(req.body.password || ''), user.password_hash)) {
+    if (!req.botError && user && guvenlik.yanlisSifre(user, req)) return kilitView(guvenlik.KILIT_DK);
     return res.status(400).render('auth/login', { title: 'Giriş Yap', next: nextUrl, form: { email, remember }, error: req.botError || 'E-posta veya şifre hatalı.' });
   }
   login(req, user, (err) => {
@@ -127,7 +141,7 @@ router.post('/sifremi-unuttum', rateLimit('sifre', 5, 60), h.verifyCsrf, turnsti
   const email = h.str(req.body.email, 200).toLowerCase();
   if (req.botError) return res.status(400).render('auth/forgot', { title: 'Şifremi Unuttum', form: { email }, error: req.botError });
   const user = byEmail.get(email);
-  if (user) {
+  if (user && !user.banned_at) {
     const t = tokens.create(user.id, 'reset', 1);
     send({
       to: user.email, subject: 'Şifre sıfırlama', title: 'Şifreni sıfırla',
@@ -155,7 +169,7 @@ router.post('/sifre-sifirla/:token', rateLimit('sifre', 5, 60), h.verifyCsrf, (r
   setPassword.run(bcrypt.hashSync(password, 10), uid);
   setVerified.run(uid); // e-postaya erişebildiği kanıtlandı
   killSessions.run(uid); // diğer cihazlardaki oturumları kapat
-  login(req, { id: uid }, (err) => {
+  login(req, byId.get(uid), (err) => {
     if (err) return next(err);
     h.flash(req, 'success', 'Şifren güncellendi.');
     res.redirect('/hesabim');
@@ -173,7 +187,7 @@ router.post('/hesabim/ayarlar', h.requireLogin, h.verifyCsrf, (req, res) => {
   const yeni = String(req.body.new_password || '');
   if (yeni) {
     const u = byId.get(req.user.id);
-    if (!bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) { h.flash(req, 'error', 'Mevcut şifre hatalı, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
+    if (u.password_hash !== '!' && !bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) { h.flash(req, 'error', 'Mevcut şifre hatalı, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
     if (yeni.length < 8) { h.flash(req, 'error', 'Yeni şifre en az 8 karakter olmalı.'); return res.redirect('/hesabim/ayarlar'); }
     if (yeni !== String(req.body.new_password2 || '')) { h.flash(req, 'error', 'Yeni şifreler birbiriyle aynı değil, şifre değiştirilmedi.'); return res.redirect('/hesabim/ayarlar'); }
     setPassword.run(bcrypt.hashSync(yeni, 10), req.user.id);
@@ -182,4 +196,47 @@ router.post('/hesabim/ayarlar', h.requireLogin, h.verifyCsrf, (req, res) => {
   res.redirect('/hesabim/ayarlar');
 });
 
+// ---- E-posta değiştirme: yeni adrese doğrulama bağlantısı, eski adrese bilgi ----
+router.post('/hesabim/eposta', h.requireLogin, rateLimit('eposta-degis', 5, 60), h.verifyCsrf, (req, res) => {
+  const u = byId.get(req.user.id);
+  const yeni = h.str(req.body.new_email, 200).toLowerCase();
+  const geri = (type, text) => { h.flash(req, type, text); res.redirect('/hesabim/ayarlar#eposta'); };
+  if (!emailOk(yeni)) return geri('error', 'Geçerli bir e-posta adresi yaz.');
+  if (yeni === u.email) return geri('error', 'Bu zaten şu anki e-posta adresin.');
+  if (u.password_hash !== '!' && !bcrypt.compareSync(String(req.body.password || ''), u.password_hash)) return geri('error', 'Şifre hatalı, e-posta değiştirilmedi.');
+  if (byEmail.get(yeni)) return geri('error', 'Bu e-posta adresiyle başka bir hesap var.');
+  const t = tokens.create(u.id, 'email', 24, yeni);
+  send({
+    to: yeni, subject: 'Yeni e-posta adresini onayla', title: 'E-posta adresini değiştirmek için onayla',
+    lines: [`Havuç Takas hesabının e-posta adresini ${yeni} olarak değiştirmek istedin.`, 'Onaylamak için aşağıdaki butona tıkla. Bağlantı 24 saat geçerlidir.'],
+    button: { text: 'Yeni adresimi onayla', url: `${h.baseUrl(req)}/eposta-onay/${t}` },
+  });
+  send({
+    to: u.email, subject: 'E-posta değiştirme isteği', title: 'Hesabının e-posta adresini değiştirme isteği',
+    lines: [`Hesabının e-posta adresinin ${yeni} olarak değiştirilmesi istendi. Yeni adres onaylanınca değişiklik yapılacak.`,
+      'Bu isteği sen yapmadıysan hemen şifreni değiştir; onaylanmayan istek 24 saat sonra geçersiz olur.'],
+  });
+  geri('success', `${yeni} adresine bir onay bağlantısı gönderdik. Bağlantıya tıklayınca e-postan değişecek.`);
+});
+
+router.get('/eposta-onay/:token', rateLimit('eposta-onay', 20, 60), (req, res, next) => {
+  const r = tokens.consumeRow(req.params.token, 'email');
+  if (!r || !r.data) return res.status(400).render('error', { title: 'Bağlantı geçersiz', message: 'Bağlantının süresi dolmuş ya da daha önce kullanılmış. Hesap ayarlarından yeniden iste.' });
+  const u = byId.get(r.userId);
+  if (!u || u.banned_at) return next();
+  if (byEmail.get(r.data)) return res.status(400).render('error', { title: 'E-posta kullanımda', message: 'Bu e-posta adresiyle bu arada başka bir hesap açılmış. Farklı bir adres dene.' });
+  const eski = u.email;
+  db.prepare('UPDATE users SET email = ?, email_verified = 1 WHERE id = ?').run(r.data, u.id);
+  send({ to: eski, subject: 'E-posta adresin değişti', title: 'Hesabının e-posta adresi değişti',
+    lines: [`Havuç Takas hesabının e-posta adresi ${r.data} olarak değiştirildi.`, 'Bunu sen yapmadıysan hemen bize iletişim sayfasından yaz.'] });
+  require('../lib/bildirim').ekle(u.id, `E-posta adresin ${r.data} olarak değişti`, '/hesabim/ayarlar', '✉️');
+  if (req.user && req.user.id === u.id) {
+    h.flash(req, 'success', `E-posta adresin ${r.data} olarak değişti.`);
+    return res.redirect('/hesabim/ayarlar');
+  }
+  h.flash(req, 'success', `E-posta adresin ${r.data} olarak değişti. Yeni adresinle giriş yapabilirsin.`);
+  res.redirect('/giris');
+});
+
 module.exports = router;
+module.exports.login = login;

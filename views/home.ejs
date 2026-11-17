@@ -4,10 +4,11 @@
   <h1>Komşundan al, komşuna ver.<br><span class="yesil">0₺ komisyon.</span></h1>
   <p class="hero-metin">İlini ve ilçeni seç, çevrendeki ikinci el eşya ve takas ilanlarını gör. Aracı yok, komisyon yok — sadece elden, güvenli teslimat.</p>
   <form class="hero-filtre" action="/ilanlar" method="get">
+    <input type="search" name="q" class="hero-ara" placeholder="Ne arıyorsun? Örn. bisiklet, koltuk, iPhone" aria-label="Ne arıyorsun?" maxlength="100">
     <div class="select-ikili">
       <%- include('partials/location-select', { secIl: '', secIlce: '', ilBos: 'Tüm Türkiye', ilceBos: 'Tüm İlçeler' }) %>
     </div>
-    <button class="btn btn-yesil">Filtrele</button>
+    <button class="btn btn-yesil">🔍 Ara</button>
   </form>
 </section>
 

@@ -1,0 +1,24 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa">
+  <h1 class="sayfa-baslik">İletişim</h1>
+  <p class="kucuk">Sorun, öneri ya da KVKK başvurun için bize yaz. En geç 2 iş günü içinde e-postana dönüş yaparız. Sık sorulan soruların cevabı <a href="/sss">SSS sayfasında</a> olabilir.</p>
+  <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <form method="post" action="/iletisim" class="form kart-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="iki-kolon">
+      <label>Adın<input name="name" required minlength="2" maxlength="80" autocomplete="name" value="<%= form.name || '' %>"></label>
+      <label>E-postan<input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
+    </div>
+    <label>Konu
+      <select name="topic" required>
+        <option value="">Seç</option>
+        <% KONULAR.forEach(function (k) { %><option <%= form.topic === k ? 'selected' : '' %>><%= k %></option><% }) %>
+      </select>
+    </label>
+    <label>Mesajın<textarea name="body" rows="6" required minlength="10" maxlength="4000" placeholder="Mümkünse ilan veya sipariş numarasını da yaz."><%= form.body || '' %></textarea></label>
+    <label class="bal-tuzagi" aria-hidden="true">Web sitesi<input name="website" tabindex="-1" autocomplete="off"></label>
+    <%- include('../partials/turnstile') %>
+    <button class="btn btn-yesil tam">Gönder</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

@@ -4,6 +4,7 @@
   <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
   <form method="post" action="/kayit" class="form kart-form">
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+    <%- include('../partials/google-btn') %>
     <label>Ad Soyad<input name="name" required minlength="3" maxlength="80" autocomplete="name" value="<%= form.name || '' %>"></label>
     <label>E-posta <small>(doğrulama bağlantısı gönderilir)</small><input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
     <label>Telefon <small>(isteğe bağlı, ilanlarda gösterilmez)</small><input type="tel" name="phone" autocomplete="tel" value="<%= form.phone || '' %>"></label>

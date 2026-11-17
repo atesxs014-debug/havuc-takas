@@ -14,11 +14,18 @@
         <% kategoriler.forEach(function (k) { %><option value="<%= k.slug %>" <%= form.category === k.slug ? 'selected' : '' %>><%= k.ad %></option><% }) %>
       </select>
     </label>
+    <label>Ürünün durumu
+      <select name="condition" required>
+        <option value="">Seçin</option>
+        <% DURUMLAR.forEach(function (d) { %><option value="<%= d[0] %>" <%= form.condition === d[0] ? 'selected' : '' %>><%= d[1] %></option><% }) %>
+      </select>
+    </label>
     <fieldset class="tur">
       <legend>İlan türü</legend>
       <label class="radio"><input type="radio" name="tur" value="satilik" <%= form.tur === 'satilik' ? 'checked' : '' %>> Satılık</label>
       <label class="radio"><input type="radio" name="tur" value="takas" <%= form.tur === 'takas' ? 'checked' : '' %>> Sadece takas</label>
       <label class="radio"><input type="radio" name="tur" value="ikisi" <%= form.tur === 'ikisi' ? 'checked' : '' %>> Satılık + takasa açık</label>
+      <label class="radio"><input type="radio" name="tur" value="bedava" <%= form.tur === 'bedava' ? 'checked' : '' %>> 🎁 Bedava (hediye)</label>
     </fieldset>
     <label class="js-fiyat">Fiyat (TL)<input name="price" inputmode="numeric" value="<%= form.price != null ? form.price : '' %>" placeholder="3500"></label>
     <% if (kargoAcik) { %>

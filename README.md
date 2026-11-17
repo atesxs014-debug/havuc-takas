@@ -60,6 +60,45 @@ havale bilgileri (`BANK_IBAN`…), SMTP, Turnstile, Umami/Plausible, yedek klas�
 - `.env`'de `IYZICO_API_KEY` / `IYZICO_SECRET_KEY` yoksa **test ödeme modu** çalışır (gerçek para yok). Canlıda (`NODE_ENV=production`) iyzico anahtarı yoksa kargolu satış kapanır. Önce `IYZICO_URI=https://sandbox-api.iyzipay.com` ile deneyin.
 - Canlıya almadan önce: şirket + iyzico Pazaryeri başvurusu, ETBİS kaydı, mesafeli satış/aracı hizmet sözleşmelerinin avukatça hazırlanması.
 
+### Sürüm 3 ile gelenler
+
+- **Arama:** her sayfanın üstünde ve anasayfada arama kutusu. Türkçe harf duyarsız ("çocuk" = "ÇOCUK" = "cocuk").
+- **Filtreler:** fiyat aralığı ve ürün durumu (sıfır, az kullanılmış, iyi, kullanılmış, tamir gerektirir). Telefonda "Filtreler" butonuyla açılıp kapanır.
+- **Kayıtlı arama + bildirim zili:** "Bu aramayı kaydet" → uygun yeni ilan çıkınca 🔔 zile bildirim, günde bir e-posta özeti. Mesaj, sipariş ve ilan onayı bildirimleri de zile düşer.
+- **İlan süresi:** ilanlar 30 gün yayında kalır; bitmeden 3 gün önce "tek tıkla yenile" e-postası gider, süresi dolan ilan "Süresi doldu" olur ve sahibi yeniler.
+- **Vitrin:** ilan sahibi 7 veya 30 günlük vitrini kartla öder; ilan listelerde en üstte ve ⭐ rozetli görünür. Fiyatlar `/yonetim → Kargo ve vitrin`'den. iyzico anahtarı yokken test ödeme modu çalışır.
+- **Mesajlaşma:** fotoğraf gönderme ve kullanıcı engelleme (engellenen kişiyle iki taraf da mesajlaşamaz). Hesap Ayarları → Engellediklerim.
+- **Üye engelleme (yönetici):** `/yonetim → Üyeler`'de ara ve "Kalıcı engelle". Üye giriş yapamaz, ilanları ve reklamları yayından kalkar, aynı e-postayla yeniden kayıt olamaz. Şikayetler sekmesinden de ilan sahibi tek tıkla engellenir.
+- **Hesap silme + verilerimi indir (KVKK):** Hesap Ayarları'ndan. Sipariş kaydı olan hesaplar silinmez, anonimleştirilir.
+- **Google ile giriş:** `.env`'e `GOOGLE_CLIENT_ID` ve `GOOGLE_CLIENT_SECRET` girilince giriş/kayıt sayfalarında "Google ile devam et" çıkar (aşağıda adımlar).
+- **İletişim, Hakkımızda, SSS:** iletişim formu mesajları `/yonetim → İletişim`'e ve e-postana (`CONTACT_EMAIL`, boşsa yöneticilere) düşer.
+
+### Sürüm 4 ile gelenler
+
+- **Güvenlik:** CSP, HSTS (yalnızca canlıda HTTPS'te) ve diğer güvenlik başlıkları. 5 yanlış şifrede hesap 15 dakika kilitlenir ve sahibine e-posta gider. Yeni bir cihazdan giriş yapılınca e-posta + zil uyarısı.
+- **E-posta değiştirme:** Hesap Ayarları'ndan. Yeni adrese onay bağlantısı gider, eski adrese bilgi verilir; bağlantıya tıklanınca değişir.
+- **Teklifler:** alıcı fiyat teklif eder ya da kendi ilanıyla takas önerir. Satıcı kabul eder, reddeder veya karşı teklif verir (`/tekliflerim`). Kabul edilen fiyat, ilan kargoluysa o fiyattan güvenli satın almayı açar. Cevaplanmayan teklif 7 günde düşer.
+- **Bedava ilan:** "🎁 Bedava (hediye)" ilan türü ve ilanlarda "Bedava" filtresi.
+- **Paylaş:** ilan sayfasında WhatsApp, bağlantıyı kopyala ve telefonun paylaş menüsü.
+- **Güvenilir satıcı rozeti:** e-postası doğrulanmış, en az 3 değerlendirmede ortalama 4,5+ alan ve son 90 günde iadesi olmayan satıcılara.
+- **Canlı mesaj:** sohbette yeni mesajlar sayfa yenilenmeden gelir, gönderim de yenilemeden olur. Zil ve mesaj sayacı kendiliğinden güncellenir.
+- **Telefona bildirim:** Bildirimler sayfasında "Bildirimleri aç" → site kapalıyken de telefona/bilgisayara bildirim düşer (iPhone'da önce siteyi ana ekrana eklemek gerekir). Anahtarlar `.env`'de yoksa otomatik üretilir.
+- **Fiyat düştü:** favorideki ilanın fiyatı düşünce zil + e-posta.
+- **Yönetim grafikleri:** `/yonetim → İstatistikler`: son 30 günün yeni üye, ilan, mesaj, teklif, kargo cirosu ve site geliri grafikleri.
+
+### Google ile giriş nasıl açılır?
+
+1. https://console.cloud.google.com adresinde bir proje oluştur.
+2. **APIs & Services → OAuth consent screen**: uygulama adı "Havuç Takas", destek e-postan; kapsamlar `email`, `profile`, `openid`.
+3. **Credentials → Create credentials → OAuth client ID → Web application**.
+   *Authorized redirect URIs* kısmına ekle: `http://localhost:3000/giris/google/donus` (yayına alınca `https://alanadin.com/giris/google/donus`).
+4. Verilen *Client ID* ve *Client secret*'ı `.env` dosyasına `GOOGLE_CLIENT_ID=` ve `GOOGLE_CLIENT_SECRET=` olarak yaz, siteyi yeniden başlat.
+
+### Testler
+
+`npm test` tüm uçtan uca testleri çalıştırır (her test kendi boş veritabanıyla). İlk seferde tarayıcı için `npx playwright install chromium` gerekir.
+GitHub'da her gönderimde ve PR'da testler otomatik çalışır (`.github/workflows/test.yml`).
+
 ### Reklam alanları nasıl çalışır?
 
 - Her **ilçe** için 4 alan: o ilçenin ilan listesinde (`/il/izmir/buca`) ve o ilçedeki her ilan sayfasında gösterilir.

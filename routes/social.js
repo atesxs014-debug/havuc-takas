@@ -43,7 +43,7 @@ router.get('/uye/:id', (req, res, next) => {
   res.render('profile', {
     title: `${u.name} - Satıcı Profili`,
     description: `${u.name} kullanıcısının Havuç Takas ilanları ve değerlendirmeleri.`,
-    uye: u, ozet, ilanlar: userListings.all(u.id), yorumlar: userReviews.all(u.id), satilan: soldCount.get(u.id).n,
+    uye: u, ozet, guvenilir: reviews.guvenilir(u.id), ilanlar: userListings.all(u.id), yorumlar: userReviews.all(u.id), satilan: soldCount.get(u.id).n,
   });
 });
 

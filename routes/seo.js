@@ -27,7 +27,7 @@ router.get('/sitemap.xml', (req, res) => {
     add('/ilanlar', null, '0.9');
     add('/reklam-ver', null, '0.6');
     add('/reklam-alanlari', null, '0.4');
-    for (const p of ['guvenli-takas', 'kvkk', 'gizlilik', 'kullanim-sartlari']) add('/' + p, null, '0.2');
+    for (const p of ['guvenli-takas', 'sss', 'hakkimizda', 'iletisim', 'kvkk', 'gizlilik', 'kullanim-sartlari']) add('/' + p, null, '0.2');
     const son = new Map(locWithListings.all().map((r) => [`${r.il}/${r.ilce}`, r.son]));
     // Tüm il sayfaları; ilçe sayfalarından ilanı olanlar (boş sayfaları dizine sokmayalım)
     for (const il of iller) {
