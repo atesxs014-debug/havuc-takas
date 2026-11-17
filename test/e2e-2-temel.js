@@ -61,7 +61,7 @@ const { B, UPLOADS, ok, lastLink, shot } = require('./helpers');
   const thanks = await U.content(); ok(thanks.includes('TR12 0006') && thanks.includes('HVC') && thanks.includes('2.250 TL'), 'teşekkür sayfasında IBAN, referans kodu ve tutar var');
   ok(lastLink('firin@test.com', /IBAN: TR12[^\n]*/) !== null, 'işletmeye ödeme bilgili e-posta gitti');
   await U.goto(B + '/isletme'); ok((await U.content()).includes('Ödeme/onay bekliyor'), 'işletme panelinde başvuru görünüyor');
-  await A.goto(B + '/yonetim'); await A.click('.admin-kart button:has-text("Ödeme alındı")');
+  await A.goto(B + '/yonetim?tab=bekleyen'); await A.click('.admin-kart button:has-text("Ödeme alındı")');
   ok((await A.locator('.flash').textContent()).includes('yayında'), 'yönetici ödemeyi onaylayıp yayına aldı');
   for (let i = 0; i < 3; i++) await U.goto(B + '/il/izmir/buca');
   ok(await U.locator('.reklam h3:has-text("Buca Lezzet")').count() === 1, 'reklam Buca sayfasında');

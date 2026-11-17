@@ -25,7 +25,9 @@ app.use(require('./lib/guvenlik').basliklar);
 const ASSET_V = require('node:crypto').createHash('sha1')
   .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'style.css')))
   .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'app.js')))
-  .update(fs.readFileSync(path.join(__dirname, 'public', 'sw.js'))).digest('hex').slice(0, 10);
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'sw.js')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'admin.css')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'admin.js'))).digest('hex').slice(0, 10);
 app.locals.assetV = ASSET_V;
 const SW = fs.readFileSync(path.join(__dirname, 'public', 'sw.js'), 'utf8').replace(/__V__/g, ASSET_V);
 app.get('/sw.js', (req, res) => {
