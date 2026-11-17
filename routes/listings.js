@@ -57,7 +57,7 @@ function renderListings(req, res, preset = {}) {
   const w = where.join(' AND ');
   const toplam = db.prepare(`SELECT COUNT(*) AS n FROM listings l WHERE ${w}`).get(...params).n;
   const sayfaSayisi = Math.max(1, Math.ceil(toplam / SAYFA_BOYUTU));
-  const ilanlar = db.prepare(`SELECT l.* FROM listings l WHERE ${w} ORDER BY (l.featured_until > datetime('now')) DESC, ${SIRALAMA[sirala]} LIMIT ? OFFSET ?`)
+  const ilanlar = db.prepare(`SELECT l.* FROM listings l WHERE ${w} ORDER BY ${SIRALAMA[sirala]} LIMIT ? OFFSET ?`)
     .all(...params, SAYFA_BOYUTU, (sayfa - 1) * SAYFA_BOYUTU);
 
   // Reklam alanları: ilçe seçiliyse ilçenin, sadece il seçiliyse ilin 4 alanı
@@ -147,9 +147,6 @@ router.get('/ilan/:id', (req, res, next) => {
     noindex: ilan.status !== 'active',
     jsonLd,
     ilan, isOwner, fotolar, kategori: k, durumAd: DURUM_AD[ilan.condition] || '',
-    vitrinde: !!(ilan.featured_until && new Date(ilan.featured_until.replace(' ', 'T') + 'Z') > new Date()),
-    vitrin: isOwner ? require('../lib/vitrin').ayarlar() : null,
-    vitrinAcik: require('../lib/vitrin').acik(),
     favSayisi: favCount.get(id).n,
     guvenilir: require('../lib/reviews').guvenilir(ilan.user_id),
     teklif: teklifBilgi(ilan, req.user, isOwner),

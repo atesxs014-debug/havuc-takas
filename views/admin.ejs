@@ -12,7 +12,7 @@
   <a href="?tab=ilan" class="<%= tab === 'ilan' ? 'aktif' : '' %>">İlanlar (<%= c.ilan %>)</a>
   <a href="?tab=uye" class="<%= tab === 'uye' ? 'aktif' : '' %>">Üyeler (<%= c.uye %>)</a>
   <a href="?tab=fiyatlar" class="<%= tab === 'fiyatlar' ? 'aktif' : '' %>">💰 Fiyatlar</a>
-  <a href="?tab=kargo" class="<%= tab === 'kargo' ? 'aktif' : '' %>">🚚 Kargo ve vitrin</a>
+  <a href="?tab=kargo" class="<%= tab === 'kargo' ? 'aktif' : '' %>">🚚 Kargo</a>
   <a href="?tab=kelimeler" class="<%= tab === 'kelimeler' ? 'aktif' : '' %>">🚫 Yasaklı kelimeler</a>
   <a href="?tab=yedek" class="<%= tab === 'yedek' ? 'aktif' : '' %>">💾 Yedekler</a>
 </nav>
@@ -131,11 +131,6 @@
       <label>En az (TL)<input name="hizmet_min" inputmode="numeric" value="<%= kargoAyar.hizmetMin %>"></label>
     </div>
     <p class="kucuk">Elden teslim ilanlar 0₺ komisyonla devam eder; bu bedel sadece kargolu güvenli ödemede alınır. iyzico'nun işlem kesintisi bu bedelden karşılanır.</p>
-    <h2 class="form-baslik">⭐ Vitrin fiyatları (TL)</h2>
-    <p class="kucuk">Şu an vitrinde <strong><%= vitrinAktif %></strong> ilan var · Toplam <strong><%= vitrinCiro.n %></strong> vitrin satışı, <strong><%= fiyat(vitrinCiro.toplam) %></strong> gelir.</p>
-    <div class="iki-kolon">
-      <% vitrinAyar.forEach(function (p) { %><label><%= p.gun %> gün vitrin<input name="vitrin_<%= p.gun %>" inputmode="numeric" value="<%= p.fiyat %>"></label><% }) %>
-    </div>
     <button class="btn btn-yesil">Kaydet</button>
   </form>
 <% } else if (tab === 'fiyatlar') { %>

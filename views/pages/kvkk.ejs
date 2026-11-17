@@ -19,8 +19,8 @@
 
 <h2>2. Platform nasıl çalışır, neden önemli?</h2>
 <p>Havuç Takas'ta üyelik ve ilan vermek <strong>ücretsizdir</strong>; kullanıcılar arasındaki alışverişten ve takastan <strong>komisyon alınmaz</strong>. Platformun geliri, il ve ilçe sayfalarında gösterilen <strong>yerel işletme reklamlarıdır</strong>. Bu reklamlar <strong>kişisel verilerinize göre hedeflenmez</strong>; yalnızca bakılan il/ilçe sayfasına göre gösterilir. Kişisel verileriniz reklam verenlerle paylaşılmaz, satılmaz, kiralanmaz ve profil çıkarmak için kullanılmaz.</p>
-<% if (ozellik.kargo || ozellik.vitrin) { %>
-<p>Bunlara ek olarak, kullanmayı seçerseniz <% if (ozellik.kargo) { %>kargolu güvenli ödeme<% } %><%= ozellik.kargo && ozellik.vitrin ? ' ve ' : '' %><% if (ozellik.vitrin) { %>ilanı öne çıkarma (vitrin)<% } %> hizmeti isteğe bağlı olarak sunulur. Bu hizmetlerde işlenen veriler aşağıda ayrıca belirtilmiştir.</p>
+<% if (ozellik.kargo) { %>
+<p>Bunlara ek olarak, kullanmayı seçerseniz kargolu güvenli ödeme hizmeti isteğe bağlı olarak sunulur. Bu hizmette işlenen veriler aşağıda ayrıca belirtilmiştir.</p>
 <% } %>
 
 <h2>3. Hangi kişisel verilerinizi işliyoruz?</h2>
@@ -36,7 +36,6 @@
   <% if (ozellik.google) { %><tr><td>Google ile giriş</td><td>Google hesabınızın adı, e-posta adresi ve hesap kimliği. Google şifreniz bize iletilmez.</td></tr><% } %>
   <tr><td>Reklam verenler</td><td>İşletme adı, yetkili adı, telefon, e-posta, adres, logo, reklam metni, ödeme referans kodu ve ödeme kayıtları; reklamın gösterim ve tıklanma sayıları (yalnızca toplam sayı, kişi bazında değil)</td></tr>
   <% if (ozellik.kargo) { %><tr><td>Kargolu güvenli ödeme</td><td><strong>Alıcı:</strong> teslimat adı soyadı, telefonu ve adresi, sipariş ve ödeme kayıtları. <strong>Satıcı:</strong> ad soyad, telefon, adres, IBAN ve T.C. kimlik numarası (IBAN ve kimlik numarası şifrelenerek saklanır), kargo takip numarası. Kart bilgileriniz sitemizde işlenmez; doğrudan ödeme kuruluşunun sayfasında alınır.</td></tr><% } %>
-  <% if (ozellik.vitrin) { %><tr><td>Vitrin ödemeleri</td><td>Satın alınan vitrin paketi, tutar ve ödeme kayıtları (kart bilgisi hariç)</td></tr><% } %>
 </table>
 <p>Sağlık, din, etnik köken gibi <strong>özel nitelikli kişisel veri talep etmiyoruz</strong>. Lütfen ilan, mesaj ve fotoğraflarınızda bu tür verilere ve kimlik kartı gibi belgelere yer vermeyin.</p>
 
@@ -66,7 +65,7 @@
 <ul>
   <li><strong>Diğer kullanıcılar:</strong> 4. maddede sayılan herkese açık bilgiler ile mesajlaştığınız kişiye gönderdiğiniz mesajlar<%= ozellik.kargo ? '; kargolu satışta teslimat için gerekli ad, telefon ve adres yalnızca siparişin karşı tarafına' : '' %>.</li>
   <li><strong>Altyapı hizmet sağlayıcıları:</strong> sunucu barındırma ve yedekleme hizmeti sağlayıcısı; e-posta gönderim hizmeti sağlayıcısı<%= ozellik.turnstile ? '; bot koruması için Cloudflare (Turnstile)' : '' %><%= ozellik.analitik ? '; çerezsiz ziyaret istatistiği sağlayıcısı' : '' %>; anlık bildirimi açtıysanız tarayıcınızın bildirim servisi (ör. Google, Apple, Mozilla).</li>
-  <% if (ozellik.kargo || ozellik.vitrin) { %><li><strong>Ödeme kuruluşu:</strong> 6493 sayılı Kanun kapsamında lisanslı ödeme kuruluşu iyzico Ödeme Hizmetleri A.Ş.; ödemenin alınması, satıcıya aktarılması ve mevzuattan doğan kimlik doğrulama yükümlülükleri için.</li><% } %>
+  <% if (ozellik.kargo) { %><li><strong>Ödeme kuruluşu:</strong> 6493 sayılı Kanun kapsamında lisanslı ödeme kuruluşu iyzico Ödeme Hizmetleri A.Ş.; ödemenin alınması, satıcıya aktarılması ve mevzuattan doğan kimlik doğrulama yükümlülükleri için.</li><% } %>
   <% if (ozellik.google) { %><li><strong>Google:</strong> yalnızca Google ile giriş seçtiğinizde, kimliğinizin doğrulanması için.</li><% } %>
   <li><strong>Yetkili kamu kurum ve kuruluşları, yargı mercileri:</strong> kanunen yetkili oldukları hâllerde ve talep ettikleri ölçüde.</li>
 </ul>

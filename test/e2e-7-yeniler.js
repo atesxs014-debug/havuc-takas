@@ -99,7 +99,7 @@ const { B, ok, sql, mails, lastLink, shot } = require('./helpers');
   const bisiklet = await ilanVer(S, 'Kırmızı Yol Bisikleti', { price: 1000, tur: 'ikisi' });
   sql('UPDATE listings SET shipping = 1 WHERE id = ?', bisiklet.id);
   await C.goto(bisiklet.url);
-  ok(await C.locator('.paylas .paylas-btn.wa').count() === 1 && await C.locator('[data-kopyala]').count() === 1, 'WhatsApp ve bağlantı kopyalama butonları var');
+  ok(await C.locator('.paylas .paylas-btn.wa').count() === 1 && await C.locator('[data-link-kopyala]').count() === 1, 'WhatsApp ve bağlantı kopyalama butonları var');
   await C.locator('#teklif summary').click();
   ok(await C.locator('.teklif-form').isVisible(), 'Teklif ver formu açıldı');
   await C.fill('.teklif-form [name=amount]', '1200');
@@ -113,6 +113,7 @@ const { B, ok, sql, mails, lastLink, shot } = require('./helpers');
   ok(mails('selin@test.com').some((m) => m.includes('yeni teklif')), 'satıcıya teklif e-postası gitti');
 
   await S.goto(bisiklet.url);
+  ok(await S.locator('.vitrin-kutu, .vitrin-form').count() === 0, 'ücretli vitrin kaldırıldı (ilan sahibine öne çıkarma kutusu yok)');
   ok((await S.locator('.teklif-uyari').textContent()).includes('1'), 'satıcı ilan sayfasında bekleyen teklif uyarısı görüyor');
   await S.goto(B + '/tekliflerim');
   ok((await S.content()).includes('Yarın alabilirim'), 'gelen teklifte alıcının notu görünüyor');
@@ -222,6 +223,9 @@ const { B, ok, sql, mails, lastLink, shot } = require('./helpers');
   await S.goto(B + '/yonetim?tab=grafik');
   ok(!(await S.content()).includes('İstatistikler'), 'yönetici olmayan grafikleri göremiyor');
 
+  const sw = await (await fetch(B + '/sw.js')).text();
+  const css = (await C.locator('link[rel=stylesheet]').first().getAttribute('href')) || '';
+  ok(/style\.css\?v=[0-9a-f]{10}$/.test(css) && sw.includes(css.split('?v=')[1]), 'CSS adresi dosya içeriğine göre sürümleniyor, service worker da aynı sürümü kullanıyor');
   ok(!cspHata.length, 'hiçbir sayfada CSP engeli yok' + (cspHata.length ? ': ' + cspHata[0] : ''));
   ok(!errs.length, 'tarayıcıda JavaScript hatası yok' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await br.close();
