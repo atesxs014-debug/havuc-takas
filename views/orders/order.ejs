@@ -1,0 +1,96 @@
+<%- include('../partials/head') %>
+<% const firma = o.carrier ? FIRMALAR.find(function (k) { return k.key === o.carrier; }) : null; %>
+<% if (query.odeme === 'ok') { %><div class="flash flash-success">Ödemen alındı! Para, ürün eline ulaşana kadar güvende bekleyecek.</div><% } %>
+<% if (query.odeme === 'hata') { %><div class="flash flash-error">Ödeme tamamlanamadı. Kartından çekim yapılmadı; tekrar deneyebilirsin.</div><% } %>
+<% if (query.odeme === 'dogrulanamadi') { %><div class="flash flash-error">Ödeme sonucu doğrulanamadı. Kartından çekim yapıldıysa bizimle iletişime geç, sipariş kodun: <%= o.code %></div><% } %>
+
+<nav class="breadcrumb"><a href="/siparislerim<%= rol === 'satici' ? '?tab=satis' : '' %>">Siparişlerim</a> › <span><%= o.code %></span></nav>
+<div class="bolum-bas">
+  <h1 class="sayfa-baslik"><%= o.title %></h1>
+  <span class="durum durum-<%= o.status %>"><%= DURUMLAR[o.status] %></span>
+</div>
+<p class="kucuk">Sipariş <code><%= o.code %></code> · <%= rol === 'satici' ? 'Alıcı' : 'Satıcı' %>: <%= karsi.name %> · <a href="/mesajlar/<%= o.listing_id %>/<%= rol === 'satici' ? o.buyer_id : o.seller_id %>">💬 Mesaj gönder</a> · <a href="/ilan/<%= o.listing_id %>">İlanı gör</a></p>
+
+<div class="siparis-izgara">
+  <section class="kart-form">
+    <!-- Adımlar -->
+    <ol class="adimlar">
+      <% const sira = ['odendi', 'kargoda', 'tamamlandi']; const idx = sira.indexOf(o.status === 'itiraz' ? 'kargoda' : o.status); %>
+      <li class="<%= idx >= 0 ? 'tamam' : '' %>">Ödeme alındı</li>
+      <li class="<%= idx >= 1 ? 'tamam' : '' %>">Kargoya verildi</li>
+      <li class="<%= idx >= 2 ? 'tamam' : '' %>">Teslim alındı · Satıcıya ödendi</li>
+    </ol>
+
+    <% if (o.status === 'odeme_bekliyor' && rol === 'alici') { %>
+      <p>Ödemen henüz tamamlanmadı.</p>
+      <form method="post" action="/siparis/<%= o.code %>/iptal"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-cizgi">Siparişten vazgeç</button></form>
+    <% } %>
+
+    <% if (o.status === 'odendi' && rol === 'satici') { %>
+      <h2 class="form-baslik">📦 Ürünü kargoya ver</h2>
+      <p class="kucuk">Ürünü <strong><%= SURELER.kargoGun %> gün içinde</strong> aşağıdaki adrese gönder ve takip numarasını gir. Kargo ücretini (<%= fiyat(o.shipping_fee) %>) ödeme aktarımıyla birlikte geri alırsın. Göndermezsen sipariş iptal edilip alıcıya iade edilir.</p>
+      <form method="post" action="/siparis/<%= o.code %>/kargo" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="iki-kolon">
+          <label>Kargo firması<select name="carrier" required><option value="">Seçin</option><% FIRMALAR.forEach(function (k) { %><option value="<%= k.key %>"><%= k.ad %></option><% }) %></select></label>
+          <label>Takip / gönderi numarası<input name="tracking_no" required minlength="5" maxlength="40"></label>
+        </div>
+        <button class="btn btn-yesil">Kargoya verdim</button>
+      </form>
+      <form method="post" action="/siparis/<%= o.code %>/iptal" style="margin-top:10px"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-mini btn-cizgi kirmizi" data-confirm="Sipariş iptal edilip alıcıya iade edilecek. Emin misin?">Gönderemeyeceğim, iptal et</button></form>
+    <% } %>
+    <% if (o.status === 'odendi' && rol === 'alici') { %><p>Satıcının ürünü kargoya vermesi bekleniyor (en geç <%= SURELER.kargoGun %> gün). Verilmezse paranın tamamı otomatik iade edilir.</p><% } %>
+
+    <% if (o.carrier) { %>
+      <p class="kargo-bilgi">🚚 <strong><%= firma ? firma.ad : o.carrier %></strong> · Takip no: <code class="kopyala" data-kopyala="<%= o.tracking_no %>"><%= o.tracking_no %></code>
+        <% if (firma && firma.site) { %> · <a href="<%= firma.site %>" target="_blank" rel="noopener">Kargo firmasının sitesinde takip et</a><% } %></p>
+    <% } %>
+
+    <% if (o.status === 'kargoda' && rol === 'alici') { %>
+      <p>Ürün eline ulaşınca kontrol et. Her şey yolundaysa onayla, ödeme satıcıya geçsin. <%= SURELER.onayGun %> gün içinde bir şey yapmazsan otomatik onaylanır.</p>
+      <form method="post" action="/siparis/<%= o.code %>/teslim"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-yesil tam" data-confirm="Ürünü teslim aldın ve sorun yok mu? Onaylayınca ödeme satıcıya aktarılır.">✅ Teslim aldım, sorun yok</button></form>
+    <% } %>
+    <% if (['odendi', 'kargoda'].includes(o.status) && rol === 'alici') { %>
+      <details class="sikayet" style="margin-top:12px">
+        <summary>⚠️ Sorun var</summary>
+        <form method="post" action="/siparis/<%= o.code %>/sorun">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <select name="reason" required>
+            <option value="">Sorun nedir?</option>
+            <option>Ürün gelmedi</option><option>Ürün hasarlı geldi</option><option>Ürün ilandakinden farklı</option><option>Eksik parça</option><option>Diğer</option>
+          </select>
+          <textarea name="detail" rows="3" maxlength="800" placeholder="Kısaca anlat; gerekirse fotoğrafları mesajla satıcıya gönder."></textarea>
+          <button class="btn btn-cizgi">Bildir</button>
+        </form>
+      </details>
+    <% } %>
+    <% if (o.status === 'itiraz') { %><p>⚠️ Bildirilen sorun: <strong><%= o.dispute_reason %></strong><br><span class="kucuk">Ekibimiz inceliyor. Ödeme, karar verilene kadar bekletiliyor.</span></p><% } %>
+    <% if (o.status === 'tamamlandi') { %><p>✅ Sipariş tamamlandı. <%= rol === 'satici' ? fiyat(o.item_price + o.shipping_fee) + ' hesabına aktarılmak üzere onaylandı.' : '' %></p>
+      <% if (rol === 'alici') { %><a class="btn btn-cizgi" href="/mesajlar/<%= o.listing_id %>/<%= o.seller_id %>">⭐ Satıcıyı puanla</a><% } %><% } %>
+    <% if (o.status === 'iade') { %><p>↩️ <%= fiyat(o.total) %> alıcıya iade edildi.</p><% } %>
+  </section>
+
+  <aside>
+    <div class="kart-form">
+      <h2 class="form-baslik">Tutar</h2>
+      <table class="tutar-tablo">
+        <tr><td>Ürün</td><td><%= fiyat(o.item_price) %></td></tr>
+        <tr><td>Kargo</td><td><%= fiyat(o.shipping_fee) %></td></tr>
+        <% if (rol !== 'satici') { %><tr><td>Hizmet bedeli</td><td><%= fiyat(o.service_fee) %></td></tr>
+        <tr class="toplam"><td>Ödenen</td><td><%= fiyat(o.total) %></td></tr>
+        <% } else { %><tr class="toplam"><td>Sana geçecek</td><td><%= fiyat(o.item_price + o.shipping_fee) %></td></tr><% } %>
+      </table>
+    </div>
+    <% if (o.paid_at || rol === 'alici') { %>
+      <div class="kart-form" style="margin-top:12px">
+        <h2 class="form-baslik">Teslimat adresi</h2>
+        <p><strong><%= o.ship_name %></strong><br><%= o.ship_phone %><br><%= o.ship_address %><br><%= ilceAdi %> / <%= ilAdi %></p>
+      </div>
+    <% } %>
+    <div class="kart-form" style="margin-top:12px">
+      <h2 class="form-baslik">Geçmiş</h2>
+      <ul class="olaylar"><% olaylar.forEach(function (e) { %><li><small><%= tarihSaat(e.created_at) %></small> <%= DURUMLAR[e.status] %><% if (e.note && e.note !== DURUMLAR[e.status]) { %> — <%= e.note %><% } %></li><% }) %></ul>
+    </div>
+  </aside>
+</div>
+<%- include('../partials/foot') %>

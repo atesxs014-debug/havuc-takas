@@ -18,6 +18,7 @@
     "ejs": "^7.0.2",
     "express": "^4.22.3",
     "express-session": "^1.19.0",
+    "iyzipay": "^2.0.71",
     "multer": "^2.5.0",
     "nodemailer": "^10.6.0",
     "sharp": "^0.35.5"

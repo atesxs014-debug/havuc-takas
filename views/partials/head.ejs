@@ -36,9 +36,8 @@
       <a href="/ilanlar" class="<%= path.startsWith('/ilanlar') || path.startsWith('/il/') ? 'aktif' : '' %>">İlanlar</a>
       <% if (user) { %>
         <a href="/mesajlar">Mesajlar<% if (unread) { %> <span class="rozet"><%= unread %></span><% } %></a>
-        <a href="/favorilerim">Favoriler</a>
+        <a href="/siparislerim">Siparişler</a>
         <a href="/hesabim">Hesabım</a>
-        <a href="/isletme">İşletme</a>
         <% if (user.is_admin) { %><a href="/yonetim">Yönetim</a><% } %>
         <form method="post" action="/cikis" class="nav-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Çıkış</button></form>
       <% } else { %>

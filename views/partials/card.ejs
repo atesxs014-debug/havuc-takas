@@ -11,6 +11,7 @@
     <div class="rozetler">
       <% if (ilan.price != null) { %><span class="fiyat-rozet"><%= fiyat(ilan.price) %></span><% } %>
       <% if (ilan.is_swap) { %><span class="takas-rozet">Takaslık</span><% } %>
+      <% if (ilan.shipping && ilan.price != null) { %><span class="kargo-rozet" title="Kargoyla güvenli satın alınabilir">📦 Kargo</span><% } %>
     </div>
     <h3 class="kart-baslik"><%= ilan.title %></h3>
     <p class="kart-alt"><%= ilan.views %> görüntülenme<% if (typeof konumGoster !== 'undefined' && konumGoster) { %> · <%= konumAdi(ilan.il, ilan.ilce) %><% } %></p>

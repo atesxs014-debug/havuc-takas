@@ -99,6 +99,7 @@ app.use(require('./routes/public'));
 app.use(require('./routes/auth'));
 app.use(require('./routes/listings'));
 app.use(require('./routes/social'));
+app.use(require('./routes/orders'));
 app.use(require('./routes/messages'));
 app.use(require('./routes/ads'));
 app.use(require('./routes/business'));

@@ -8,6 +8,7 @@ const moderation = require('../lib/moderation');
 const notify = require('../lib/notify');
 const backup = require('../lib/backup');
 const { isSlotFree, expireOld, SLOT_SAYISI } = require('../lib/ads');
+const orders = require('../lib/orders');
 
 const router = express.Router();
 router.use(h.requireAdmin);
@@ -20,14 +21,16 @@ const counts = db.prepare(`SELECT
   (SELECT COUNT(*) FROM listings WHERE status = 'pending') AS onay,
   (SELECT COUNT(*) FROM reports WHERE status = 'open') AS sikayet,
   (SELECT COUNT(*) FROM listings WHERE status = 'active') AS ilan,
-  (SELECT COUNT(*) FROM users) AS uye`);
+  (SELECT COUNT(*) FROM users) AS uye,
+  (SELECT COUNT(*) FROM orders WHERE status = 'itiraz') AS itiraz,
+  (SELECT COUNT(*) FROM orders WHERE status IN ('odendi','kargoda','itiraz')) AS acik_siparis`);
 
 const SEKMELER = {
   bekleyen: "SELECT * FROM ads WHERE status = 'pending' ORDER BY created_at",
   aktif: "SELECT * FROM ads WHERE status = 'active' ORDER BY renew_months IS NULL, end_date",
   gecmis: "SELECT * FROM ads WHERE status IN ('rejected','ended') ORDER BY id DESC LIMIT 200",
 };
-const TABS = ['bekleyen', 'aktif', 'gecmis', 'onay', 'sikayet', 'ilan', 'uye', 'fiyatlar', 'kelimeler', 'yedek'];
+const TABS = ['bekleyen', 'aktif', 'gecmis', 'onay', 'sikayet', 'siparis', 'ilan', 'uye', 'fiyatlar', 'kargo', 'kelimeler', 'yedek'];
 
 function backupList() {
   try {
@@ -50,6 +53,14 @@ router.get('/', (req, res) => {
       ORDER BY l.id DESC LIMIT 200`).all();
   else if (tab === 'uye') rows = db.prepare(`SELECT u.*, (SELECT COUNT(*) FROM listings WHERE user_id = u.id) AS ilan_sayisi
       FROM users u ORDER BY u.id DESC LIMIT 200`).all();
+  else if (tab === 'siparis') {
+    rows = db.prepare(`SELECT o.*, b.name AS buyer, s.name AS seller FROM orders o JOIN users b ON b.id = o.buyer_id JOIN users s ON s.id = o.seller_id
+      WHERE o.status != 'odeme_bekliyor' AND NOT (o.status = 'iptal' AND o.paid_at IS NULL)
+      ORDER BY o.status = 'itiraz' DESC, o.status IN ('odendi','kargoda') DESC, o.id DESC LIMIT 300`).all();
+    Object.assign(extra, { DURUMLAR: orders.DURUMLAR, ciro: db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(service_fee),0) AS hizmet, COALESCE(SUM(total),0) AS hacim
+      FROM orders WHERE status = 'tamamlandi'`).get() });
+  }
+  else if (tab === 'kargo') Object.assign(extra, { kargoAyar: orders.ayarlar(), PAKETLER: orders.PAKETLER, saglayici: (require('../lib/payments').provider() || { name: 'kapalı' }).name });
   else if (tab === 'fiyatlar') Object.assign(extra, { gruplar: pricing.GRUPLAR, fiyatTablo: pricing.tablo(), ozel: pricing.overrides() });
   else if (tab === 'kelimeler') extra.kelimeler = moderation.wordsText();
   else if (tab === 'yedek') Object.assign(extra, { yedekler: backupList(), yedekDir: config.backup.dir, keep: config.backup.keepDays });
@@ -121,6 +132,26 @@ router.post('/ilan/:id/durum', h.verifyCsrf, (req, res, next) => {
   h.flash(req, 'success', status === 'active' ? 'İlan yayında.' : 'İlan yayından kaldırıldı.');
   const back = ['sikayet', 'onay'].includes(req.body.back) ? req.body.back : 'ilan';
   res.redirect('/yonetim?tab=' + back);
+});
+
+router.post('/kargo', h.verifyCsrf, (req, res) => {
+  orders.setAyarlar(req.body);
+  h.flash(req, 'success', 'Kargo ve hizmet bedeli ayarları kaydedildi.');
+  res.redirect('/yonetim?tab=kargo');
+});
+
+router.post('/siparis/:id/:islem', h.verifyCsrf, async (req, res, next) => {
+  const o = orders.byId(parseInt(req.params.id, 10) || 0);
+  if (!o || !['odendi', 'kargoda', 'itiraz'].includes(o.status)) return next();
+  const note = h.str(req.body.note, 300) || null;
+  try {
+    if (req.params.islem === 'aktar') { await orders.tamamla(o, 'Yönetici satıcıya aktardı' + (note ? ': ' + note : '')); h.flash(req, 'success', `${o.code}: ödeme satıcıya aktarıldı.`); }
+    else if (req.params.islem === 'iade') { await orders.iadeEt(o, 'Yönetici iade etti' + (note ? ': ' + note : '')); h.flash(req, 'success', `${o.code}: alıcıya iade edildi.`); }
+    else return next();
+  } catch (e) {
+    h.flash(req, 'error', `İşlem yapılamadı: ${e.message}`);
+  }
+  res.redirect('/yonetim?tab=siparis');
 });
 
 router.post('/fiyatlar', h.verifyCsrf, (req, res) => {

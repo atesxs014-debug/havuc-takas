@@ -51,6 +51,15 @@ havale bilgileri (`BANK_IBAN`…), SMTP, Turnstile, Umami/Plausible, yedek klas�
 - **İstatistik:** `.env`'de Umami veya Plausible bilgisi girilirse çerezsiz ziyaretçi sayacı eklenir.
 - **Günlük otomatik yedek:** veritabanı + yeni fotoğraflar `data/yedekler` (veya `BACKUP_DIR`) klasörüne; son 14 gün tutulur. Elle: `npm run yedek` veya panelden.
 
+### Güvenli ödemeli kargo
+
+- Satıcı bir kez **Ödeme Bilgilerim** sayfasından IBAN ve TC kimlik bilgisini girer (şifreli saklanır, iyzico'ya alt üye işyeri olarak kaydedilir). Sonra ilanında "Kargoyla satış" ve paket boyunu seçer.
+- Alıcı "Kargoyla Satın Al" ile adresini girip kartla öder: **ürün + kargo + hizmet bedeli**. Para iyzico'da bekler.
+- Satıcı 3 gün içinde kargoya verip takip numarasını girer (vermezse otomatik iade). Alıcı "Teslim aldım" deyince ya da 7 gün içinde sorun bildirmezse ödeme satıcıya aktarılır. "Sorun var" denirse yönetici `/yonetim → Siparişler`'den aktarır veya iade eder.
+- Kargo ücretleri (küçük/orta/büyük paket) ve hizmet bedeli (yüzde + en az tutar) `/yonetim → Kargo ayarları`'ndan değiştirilir.
+- `.env`'de `IYZICO_API_KEY` / `IYZICO_SECRET_KEY` yoksa **test ödeme modu** çalışır (gerçek para yok). Canlıda (`NODE_ENV=production`) iyzico anahtarı yoksa kargolu satış kapanır. Önce `IYZICO_URI=https://sandbox-api.iyzipay.com` ile deneyin.
+- Canlıya almadan önce: şirket + iyzico Pazaryeri başvurusu, ETBİS kaydı, mesafeli satış/aracı hizmet sözleşmelerinin avukatça hazırlanması.
+
 ### Reklam alanları nasıl çalışır?
 
 - Her **ilçe** için 4 alan: o ilçenin ilan listesinde (`/il/izmir/buca`) ve o ilçedeki her ilan sayfasında gösterilir.

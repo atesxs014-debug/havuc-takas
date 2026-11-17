@@ -1,0 +1,20 @@
+<%- include('../partials/head') %>
+<h1 class="sayfa-baslik">Siparişlerim</h1>
+<nav class="sekmeler">
+  <a href="?tab=alis" class="<%= tab === 'alis' ? 'aktif' : '' %>">Aldıklarım</a>
+  <a href="?tab=satis" class="<%= tab === 'satis' ? 'aktif' : '' %>">Sattıklarım</a>
+</nav>
+<% if (rows.length) { %>
+  <ul class="konusmalar">
+    <% rows.forEach(function (o) { const bekliyor = (tab === 'satis' && o.status === 'odendi') || (tab === 'alis' && o.status === 'kargoda'); %>
+      <li class="<%= bekliyor ? 'okunmamis' : '' %>"><a href="/siparis/<%= o.code %>">
+        <span class="konusma-govde"><strong><%= o.title %></strong> <small>· <%= o.code %> · <%= tarih(o.created_at) %></small>
+          <span class="son-mesaj"><%= DURUMLAR[o.status] %><%= bekliyor ? (tab === 'satis' ? ' · Senden kargo bekleniyor' : ' · Teslim alınca onayla') : '' %></span></span>
+        <span class="konusma-sag"><strong><%= fiyat(tab === 'satis' ? o.item_price + o.shipping_fee : o.total) %></strong></span>
+      </a></li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <div class="bos-durum"><p><%= tab === 'satis' ? 'Henüz kargoyla satışın yok. İlanlarında "Kargoyla satış" seçeneğini açabilirsin.' : 'Henüz kargoyla aldığın bir ürün yok.' %></p></div>
+<% } %>
+<%- include('../partials/foot') %>

@@ -59,6 +59,16 @@
           <button name="status" value="removed" class="btn btn-cizgi kirmizi" data-confirm="İlan kaldırılsın mı?">🗑 Kaldır</button>
         </form><% } %>
       <% } else { %>
+        <% if (kargo && !kargo.engel) { %>
+          <div class="kargo-kutu">
+            <p><strong>📦 Kargoyla güvenli satın al</strong></p>
+            <p class="kucuk">Ürün <%= fiyat(kargo.tutar.urun) %> + kargo <%= fiyat(kargo.tutar.kargo) %> + hizmet bedeli <%= fiyat(kargo.tutar.hizmet) %></p>
+            <a class="btn btn-turuncu tam" href="/ilan/<%= ilan.id %>/satin-al">Kargoyla Satın Al · <%= fiyat(kargo.tutar.toplam) %></a>
+            <p class="kucuk">🔒 Paran, ürünü teslim alıp onaylayana kadar güvende bekler.</p>
+          </div>
+        <% } else if (kargo && ilan.status === 'active') { %>
+          <p class="kucuk">📦 Kargoyla satışa açık · <%= kargo.engel %></p>
+        <% } %>
         <a class="btn btn-yesil tam" href="/mesajlar/<%= ilan.id %>/<%= ilan.user_id %>">💬 Satıcıya Mesaj Gönder</a>
         <details class="sikayet">
           <summary>🚩 İlanı Şikayet Et</summary>
@@ -78,7 +88,7 @@
         </details>
       <% } %>
     </div>
-    <p class="guvenlik-not">🛡️ Ön ödeme yapmayın. Halka açık bir yerde buluşun, ürünü görerek elden teslim alın. <a href="/guvenli-takas">Güvenli takas rehberi</a></p>
+    <p class="guvenlik-not">🛡️ Site dışında ön ödeme yapmayın. Kargolu alışverişte yalnızca "Kargoyla Satın Al" butonunu kullanın. Halka açık bir yerde buluşun, ürünü görerek elden teslim alın. <a href="/guvenli-takas">Güvenli takas rehberi</a></p>
   </div>
 </div>
 

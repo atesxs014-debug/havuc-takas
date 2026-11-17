@@ -131,6 +131,10 @@ router.get('/ilan/:id', (req, res, next) => {
     jsonLd,
     ilan, isOwner, fotolar, kategori: k,
     favSayisi: favCount.get(id).n,
+    kargo: ilan.shipping && ilan.price != null ? {
+      tutar: require('../lib/orders').hesapla(ilan),
+      engel: require('./orders').satinAlinabilir(ilan, req.user),
+    } : null,
     reklamlar: getSlots(ilan.il, ilan.ilce, { countImpression: true }),
     benzer: similar.all(ilan.id, ilan.il, ilan.category),
   });
@@ -148,7 +152,18 @@ function readForm(req) {
     ilce: h.str(req.body.ilce, 60),
     tur,
     price: tur === 'takas' ? null : fiyatRaw ? parseInt(fiyatRaw, 10) : null,
+    shipping: req.body.shipping && tur !== 'takas' ? 1 : 0,
+    package_size: ['kucuk', 'orta', 'buyuk'].includes(req.body.package_size) ? req.body.package_size : 'orta',
   };
+}
+
+// Kargolu satış için satıcının ödeme bilgileri tamam olmalı
+function kargoKontrol(f, userId) {
+  if (!f.shipping) return null;
+  if (!require('../lib/payments').kargoAcik()) return 'Kargolu satış şu an kapalı.';
+  const acc = db.prepare('SELECT sub_merchant_key FROM payout_accounts WHERE user_id = ?').get(userId);
+  if (!acc || !acc.sub_merchant_key) return 'KARGO_HESAP';
+  return null;
 }
 
 function validate(f) {
@@ -168,28 +183,34 @@ async function savePhotos(listingId, files, startSort) {
   }
 }
 
+function kargoBilgi(req) {
+  const orders = require('../lib/orders');
+  const acc = db.prepare('SELECT sub_merchant_key FROM payout_accounts WHERE user_id = ?').get(req.user.id);
+  return { kargoAcik: require('../lib/payments').kargoAcik(), hesapHazir: !!(acc && acc.sub_merchant_key), PAKETLER: orders.PAKETLER, kargoAyar: orders.ayarlar() };
+}
+
 const insImage = db.prepare('INSERT INTO listing_images (listing_id, file, thumb, sort) VALUES (?, ?, ?, ?)');
 const setCover = db.prepare(`UPDATE listings SET image = (SELECT thumb FROM listing_images WHERE listing_id = ? ORDER BY sort, id LIMIT 1) WHERE id = ?`);
 
 router.get('/ilan-ver', h.requireLogin, h.requireVerified, (req, res) => {
-  res.render('listing-form', { title: 'Ücretsiz İlan Ver', form: { tur: 'satilik' }, edit: false, fotolar: [], MAX_FOTO: images.MAX_FOTO, noindex: true });
+  res.render('listing-form', { title: 'Ücretsiz İlan Ver', form: { tur: 'satilik', package_size: 'orta' }, edit: false, fotolar: [], MAX_FOTO: images.MAX_FOTO, noindex: true, ...kargoBilgi(req) });
 });
 
-const insertListing = db.prepare(`INSERT INTO listings (user_id, title, description, category, price, is_swap, il, ilce, status, mod_reason)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+const insertListing = db.prepare(`INSERT INTO listings (user_id, title, description, category, price, is_swap, il, ilce, status, mod_reason, shipping, package_size)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
 router.post('/ilan-ver', h.requireLogin, h.requireVerified, rateLimit('ilan', 20, 60 * 24), images.parse('photos', images.MAX_FOTO),
   h.verifyCsrf, turnstile, async (req, res, next) => {
     try {
       const form = readForm(req);
-      const error = req.uploadError || req.botError || validate(form);
+      const error = req.uploadError || req.botError || validate(form) || kargoKontrol(form, req.user.id);
       if (error) {
-        return res.status(400).render('listing-form', { title: 'Ücretsiz İlan Ver', form, edit: false, fotolar: [], MAX_FOTO: images.MAX_FOTO, error });
+        return res.status(400).render('listing-form', { title: 'Ücretsiz İlan Ver', form, edit: false, fotolar: [], MAX_FOTO: images.MAX_FOTO, error, ...kargoBilgi(req) });
       }
       const hits = moderation.check(form.title, form.description);
       const status = hits.length ? 'pending' : 'active';
       const info = insertListing.run(req.user.id, form.title, form.description, form.category, form.price,
-        form.tur === 'satilik' ? 0 : 1, form.il, form.ilce, status, hits.join(', ') || null);
+        form.tur === 'satilik' ? 0 : 1, form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size);
       const id = Number(info.lastInsertRowid);
       try {
         await savePhotos(id, req.files, 0);
@@ -214,11 +235,11 @@ router.get('/ilan/:id/duzenle', h.requireLogin, (req, res, next) => {
   const l = ownListing.get(parseInt(req.params.id, 10) || 0, req.user.id);
   if (!l || l.status === 'removed') return next();
   const form = { ...l, tur: l.price == null ? 'takas' : l.is_swap ? 'ikisi' : 'satilik' };
-  res.render('listing-form', { title: 'İlanı Düzenle', form, edit: true, fotolar: getImages.all(l.id), MAX_FOTO: images.MAX_FOTO, noindex: true });
+  res.render('listing-form', { title: 'İlanı Düzenle', form, edit: true, fotolar: getImages.all(l.id), MAX_FOTO: images.MAX_FOTO, noindex: true, ...kargoBilgi(req) });
 });
 
 const updateListing = db.prepare(`UPDATE listings SET title = ?, description = ?, category = ?, price = ?, is_swap = ?,
-  il = ?, ilce = ?, status = ?, mod_reason = ? WHERE id = ? AND user_id = ?`);
+  il = ?, ilce = ?, status = ?, mod_reason = ?, shipping = ?, package_size = ? WHERE id = ? AND user_id = ?`);
 const delImage = db.prepare('DELETE FROM listing_images WHERE id = ? AND listing_id = ?');
 const imgById = db.prepare('SELECT * FROM listing_images WHERE id = ? AND listing_id = ?');
 
@@ -230,10 +251,10 @@ router.post('/ilan/:id/duzenle', h.requireLogin, images.parse('photos', images.M
     const mevcut = getImages.all(l.id);
     const silinecek = [].concat(req.body.remove_img || []).map(Number);
     const kalan = mevcut.filter((f) => !silinecek.includes(f.id));
-    let error = req.uploadError || validate(form);
+    let error = req.uploadError || validate(form) || kargoKontrol(form, req.user.id);
     if (!error && kalan.length + req.files.length > images.MAX_FOTO) error = `En fazla ${images.MAX_FOTO} fotoğraf olabilir. Önce bazılarını kaldırın.`;
     if (error) {
-      return res.status(400).render('listing-form', { title: 'İlanı Düzenle', form, edit: true, fotolar: mevcut, MAX_FOTO: images.MAX_FOTO, error });
+      return res.status(400).render('listing-form', { title: 'İlanı Düzenle', form, edit: true, fotolar: mevcut, MAX_FOTO: images.MAX_FOTO, error, ...kargoBilgi(req) });
     }
     for (const id of silinecek) {
       const img = imgById.get(id, l.id);
@@ -251,7 +272,7 @@ router.post('/ilan/:id/duzenle', h.requireLogin, images.parse('photos', images.M
     if (hits.length && ['active', 'pending'].includes(l.status)) status = 'pending';
     else if (!hits.length && l.status === 'pending') status = 'active';
     updateListing.run(form.title, form.description, form.category, form.price, form.tur === 'satilik' ? 0 : 1,
-      form.il, form.ilce, status, hits.join(', ') || null, l.id, req.user.id);
+      form.il, form.ilce, status, hits.join(', ') || null, form.shipping, form.package_size, l.id, req.user.id);
     setCover.run(l.id, l.id);
     if (status === 'pending' && l.status !== 'pending') notify.listingPending({ id: l.id, title: form.title, mod_reason: hits.join(', ') }, req.user.id);
     h.flash(req, status === 'pending' ? 'info' : 'success', status === 'pending' ? 'İlan güncellendi ve incelemeye alındı.' : 'İlan güncellendi.');
