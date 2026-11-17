@@ -38,7 +38,6 @@ function kvkkBilgi() {
     vs: config.kvkk,
     ozellik: {
       kargo: require('../lib/payments').kargoAcik(),
-      vitrin: require('../lib/vitrin').acik(),
       google: !!config.google,
       turnstile: !!config.turnstile,
       analitik: !!((config.analytics.umamiSrc && config.analytics.umamiId) || config.analytics.plausibleDomain),

@@ -9,7 +9,6 @@ const notify = require('../lib/notify');
 const backup = require('../lib/backup');
 const { isSlotFree, expireOld, SLOT_SAYISI } = require('../lib/ads');
 const orders = require('../lib/orders');
-const vitrin = require('../lib/vitrin');
 const ban = require('../lib/ban');
 const bildirim = require('../lib/bildirim');
 
@@ -73,10 +72,7 @@ router.get('/', (req, res) => {
     Object.assign(extra, { DURUMLAR: orders.DURUMLAR, ciro: db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(service_fee),0) AS hizmet, COALESCE(SUM(total),0) AS hacim
       FROM orders WHERE status = 'tamamlandi'`).get() });
   }
-  else if (tab === 'kargo') Object.assign(extra, { kargoAyar: orders.ayarlar(), PAKETLER: orders.PAKETLER, saglayici: (require('../lib/payments').provider() || { name: 'kapalı' }).name,
-    vitrinAyar: vitrin.ayarlar(),
-    vitrinCiro: db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(price),0) AS toplam FROM featured_orders WHERE status = 'odendi'").get(),
-    vitrinAktif: db.prepare("SELECT COUNT(*) AS n FROM listings WHERE status = 'active' AND featured_until > datetime('now')").get().n });
+  else if (tab === 'kargo') Object.assign(extra, { kargoAyar: orders.ayarlar(), PAKETLER: orders.PAKETLER, saglayici: (require('../lib/payments').provider() || { name: 'kapalı' }).name });
   else if (tab === 'fiyatlar') Object.assign(extra, { gruplar: pricing.GRUPLAR, fiyatTablo: pricing.tablo(), ozel: pricing.overrides() });
   else if (tab === 'grafik') { const ist = require('../lib/istatistik'); Object.assign(extra, { grafikler: ist.hepsi(), grafikSvg: ist.svg, grafikGun: ist.GUN, sayi: ist.sayi }); }
   else if (tab === 'kelimeler') extra.kelimeler = moderation.wordsText();
@@ -182,8 +178,7 @@ router.post('/ilan/:id/durum', h.verifyCsrf, (req, res, next) => {
 
 router.post('/kargo', h.verifyCsrf, (req, res) => {
   orders.setAyarlar(req.body);
-  vitrin.setAyarlar(req.body);
-  h.flash(req, 'success', 'Kargo, hizmet bedeli ve vitrin ayarları kaydedildi.');
+  h.flash(req, 'success', 'Kargo ve hizmet bedeli ayarları kaydedildi.');
   res.redirect('/yonetim?tab=kargo');
 });
 

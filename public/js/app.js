@@ -152,6 +152,17 @@
     });
   }
 
+  // Dosya seçme butonu: seçilen dosya adını/sayısını yaz
+  document.querySelectorAll('.dosya-sec input[type=file]').forEach(function (inp) {
+    var yazi = inp.parentElement.querySelector('[data-dosya-yazi]');
+    var ilk = yazi.textContent;
+    inp.addEventListener('change', function () {
+      var n = inp.files ? inp.files.length : 0;
+      yazi.textContent = !n ? ilk : n === 1 ? inp.files[0].name : n + ' fotoğraf seçildi';
+      inp.parentElement.classList.toggle('secili', n > 0);
+    });
+  });
+
   // Fotoğraf seçimi: sınır kontrolü + önizleme
   var fotoInput = document.querySelector('.js-foto');
   if (fotoInput) {
@@ -393,7 +404,7 @@
   var pay = document.querySelector('[data-paylas]');
   if (pay) {
     var url = pay.getAttribute('data-url');
-    var kop = pay.querySelector('[data-kopyala]');
+    var kop = pay.querySelector('[data-link-kopyala]');
     kop.addEventListener('click', function () {
       var bitti = function () { kop.classList.add('tamam'); kop.querySelector('span').textContent = 'Kopyalandı ✓'; setTimeout(function () { kop.classList.remove('tamam'); kop.querySelector('span').textContent = 'Bağlantıyı kopyala'; }, 2000); };
       if (navigator.clipboard) navigator.clipboard.writeText(url).then(bitti).catch(function () { window.prompt('Bağlantı:', url); });

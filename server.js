@@ -1,4 +1,5 @@
 const path = require('node:path');
+const fs = require('node:fs');
 const express = require('express');
 const session = require('express-session');
 const config = require('./lib/config');
@@ -20,9 +21,16 @@ app.disable('x-powered-by');
 app.use(require('./lib/guvenlik').basliklar);
 
 // PWA: service worker kök dizinden sunulmalı
+// CSS/JS adresine içerikten üretilen sürüm eklenir: dosya değişince tarayıcı ve service worker eskisini kullanmaz
+const ASSET_V = require('node:crypto').createHash('sha1')
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'style.css')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'app.js')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'sw.js'))).digest('hex').slice(0, 10);
+app.locals.assetV = ASSET_V;
+const SW = fs.readFileSync(path.join(__dirname, 'public', 'sw.js'), 'utf8').replace(/__V__/g, ASSET_V);
 app.get('/sw.js', (req, res) => {
-  res.set({ 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/' });
-  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+  res.set({ 'Service-Worker-Allowed': '/', 'Cache-Control': 'no-cache' });
+  res.type('application/javascript').send(SW);
 });
 app.get('/manifest.webmanifest', (req, res) => {
   res.type('application/manifest+json').sendFile(path.join(__dirname, 'public', 'manifest.webmanifest'));
@@ -99,7 +107,6 @@ app.use(require('./routes/listings'));
 app.use(require('./routes/social'));
 app.use(require('./routes/orders'));
 app.use(require('./routes/messages'));
-app.use(require('./routes/vitrin'));
 app.use(require('./routes/hesap'));
 app.use(require('./routes/google'));
 app.use(require('./routes/canli'));

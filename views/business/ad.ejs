@@ -63,7 +63,8 @@
     </div>
     <label>Adres<input name="address" maxlength="200" value="<%= ad.address || '' %>"></label>
     <% if (ad.image) { %><div class="mevcut-foto"><img src="/uploads/<%= ad.image %>" alt=""><label class="radio"><input type="checkbox" name="remove_image" value="1"> Logoyu kaldır</label></div><% } %>
-    <label>Yeni logo <small>(isteğe bağlı)</small><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>
+    <div class="dosya-alan"><span class="dosya-baslik">Yeni logo <small>(isteğe bağlı)</small></span>
+      <label class="dosya-sec"><input type="file" name="image" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 5l1.5-2h4l1.5 2"/></svg><span data-dosya-yazi>Görsel seç</span></label></div>
     <button class="btn btn-yesil">Kaydet</button>
   </form>
 <% } %>

@@ -6,7 +6,6 @@
 <% if (ilan.status === 'pending') { %><div class="flash flash-info">⏳ Bu ilan incelemede, şu an sadece sen<%= user && user.is_admin ? ' ve yöneticiler' : '' %> görebilirsin.<% if (user && user.is_admin && ilan.mod_reason) { %> Yakalanan: <%= ilan.mod_reason %><% } %></div><% } %>
 <% if (ilan.status === 'expired') { %><div class="flash flash-info">⌛ Bu ilanın yayın süresi doldu.<% if (isOwner) { %> <form method="post" action="/ilan/<%= ilan.id %>/yenile" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Tek tıkla 30 gün yenile</button></form><% } %></div><% } %>
 <% if (ilan.status === 'banned' || ilan.seller_banned) { %><div class="flash flash-error">Bu ilanın sahibi engellendiği için ilan yayında değil.</div><% } %>
-<% if (query.vitrin === 'ok') { %><div class="flash flash-success">⭐ Ödemen alındı, ilanın vitrinde!</div><% } else if (query.vitrin === 'hata') { %><div class="flash flash-error">Vitrin ödemesi tamamlanmadı.</div><% } else if (query.vitrin === 'dogrulanamadi') { %><div class="flash flash-error">Ödeme sonucu doğrulanamadı. Kartından çekim yapıldıysa bize ulaş.</div><% } %>
 <% if (ilan.status === 'rejected') { %><div class="flash flash-error">Bu ilan kurallara uymadığı için yayınlanmadı.</div><% } %>
 <div class="detay">
   <div class="detay-sol">
@@ -14,10 +13,9 @@
       <div class="detay-gorsel" style="--r1:<%= kategori.renk[0] %>;--r2:<%= kategori.renk[1] %>">
         <% if (fotolar.length) { %><img src="/uploads/<%= fotolar[0].file %>" alt="<%= ilan.title %>" data-galeri-ana><% } else { %><%- kategori.ikon %><% } %>
         <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi / Satıldı</span><% } %>
-        <% if (vitrinde && ilan.status === 'active') { %><span class="vitrin-rozet buyuk">⭐ Vitrin</span><% } %>
         <% if (fotolar.length > 1) { %>
-          <button type="button" class="galeri-ok sol" data-galeri-onceki aria-label="Önceki fotoğraf">‹</button>
-          <button type="button" class="galeri-ok sag" data-galeri-sonraki aria-label="Sonraki fotoğraf">›</button>
+          <button type="button" class="galeri-ok sol" data-galeri-onceki aria-label="Önceki fotoğraf"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button type="button" class="galeri-ok sag" data-galeri-sonraki aria-label="Sonraki fotoğraf"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
           <span class="galeri-sayac" data-galeri-sayac>1 / <%= fotolar.length %></span>
         <% } %>
       </div>
@@ -67,19 +65,6 @@
         <% if (ilan.status === 'active' && ilan.expires_at) { %>
           <div class="kucuk sure-not">⌛ Yayında: <%= tarih(ilan.expires_at) %> tarihine kadar.
             <form method="post" action="/ilan/<%= ilan.id %>/yenile" class="satir-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Şimdi 30 gün uzat</button></form></div>
-        <% } %>
-        <% if (ilan.status === 'active' && vitrin && vitrinAcik) { %>
-          <div class="vitrin-kutu">
-            <% if (vitrinde) { %><p><strong>⭐ İlanın vitrinde</strong> · <%= tarih(ilan.featured_until) %> tarihine kadar. Süreyi uzatabilirsin:</p>
-            <% } else { %><p><strong>⭐ İlanını öne çıkar</strong></p><p class="kucuk">Vitrindeki ilanlar il, ilçe ve arama sonuçlarında en üstte, rozetle görünür.</p><% } %>
-            <form method="post" action="/ilan/<%= ilan.id %>/vitrin" class="vitrin-form">
-              <input type="hidden" name="_csrf" value="<%= csrf %>">
-              <% vitrin.forEach(function (p, i) { %>
-                <label class="vitrin-secenek"><input type="radio" name="gun" value="<%= p.gun %>" <%= i === 0 ? 'checked' : '' %>><span><strong><%= p.gun %> gün</strong><small><%= fiyat(p.fiyat) %></small></span></label>
-              <% }) %>
-              <button class="btn btn-turuncu tam">Kartla öde ve öne çıkar</button>
-            </form>
-          </div>
         <% } %>
       <% } else { %>
         <% if (kargo && !kargo.engel) { %>
@@ -158,7 +143,7 @@
       <span class="kucuk">Paylaş:</span>
       <a class="paylas-btn wa" href="https://wa.me/?text=<%= encodeURIComponent(ilan.title + ' ' + canonical) %>" target="_blank" rel="noopener" aria-label="WhatsApp ile paylaş">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.6z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 1c-1.2-.5-2.5-1.8-3-3l1-1-1-2z"/></svg> WhatsApp</a>
-      <button type="button" class="paylas-btn" data-kopyala aria-label="Bağlantıyı kopyala">
+      <button type="button" class="paylas-btn" data-link-kopyala aria-label="Bağlantıyı kopyala">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> <span>Bağlantıyı kopyala</span></button>
       <button type="button" class="paylas-btn" data-paylas-yerel hidden aria-label="Paylaş">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg> Diğer</button>

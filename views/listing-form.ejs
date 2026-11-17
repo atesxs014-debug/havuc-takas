@@ -62,10 +62,15 @@
         </div>
       </fieldset>
     <% } %>
-    <label>Fotoğraflar <small>(en fazla <%= MAX_FOTO %> adet, her biri en fazla 10 MB · otomatik küçültülür)</small>
-      <input type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple data-max="<%= MAX_FOTO - (edit ? fotolar.length : 0) %>" class="js-foto">
-    </label>
-    <div class="foto-onizleme" id="fotoOnizleme"></div>
+    <div class="dosya-alan">
+      <span class="dosya-baslik">Fotoğraflar <small>(en fazla <%= MAX_FOTO %> adet, her biri en fazla 10 MB · otomatik küçültülür)</small></span>
+      <label class="dosya-sec">
+        <input type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple data-max="<%= MAX_FOTO - (edit ? fotolar.length : 0) %>" class="js-foto">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 5l1.5-2h4l1.5 2"/></svg>
+        <span data-dosya-yazi>Fotoğraf seç</span>
+      </label>
+    </div>
+    <div class="ilan-onizleme" id="fotoOnizleme"></div>
     <% if (!edit) { %><%- include('partials/turnstile') %><% } %>
     <button class="btn btn-yesil tam"><%= edit ? 'Kaydet' : 'İlanı Yayınla' %></button>
     <p class="kucuk">İlan vermek ücretsizdir. Yayınlayarak <a href="/kullanim-sartlari">Kullanım Şartları</a>'nı kabul etmiş olursunuz.</p>

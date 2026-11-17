@@ -22,7 +22,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Havuç Takas">
-<link rel="stylesheet" href="/static/css/style.css?v=5">
+<link rel="stylesheet" href="/static/css/style.css?v=<%= assetV %>">
 <% if (jsonLd) { %><script type="application/ld+json"><%- JSON.stringify(jsonLd).replace(/</g, '\\u003c') %></script><% } %>
 <% if (cfg.analytics.umamiSrc && cfg.analytics.umamiId) { %><script defer src="<%= cfg.analytics.umamiSrc %>" data-website-id="<%= cfg.analytics.umamiId %>"></script><% } %>
 <% if (cfg.analytics.plausibleDomain) { %><script defer data-domain="<%= cfg.analytics.plausibleDomain %>" src="<%= cfg.analytics.plausibleSrc %>"></script><% } %>

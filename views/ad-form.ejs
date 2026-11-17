@@ -39,7 +39,8 @@
       <label>Web sitesi / Instagram<input name="website" value="<%= form.website || '' %>" placeholder="ornek.com veya instagram.com/isletme"></label>
     </div>
     <label>Adres <small>(isteğe bağlı)</small><input name="address" maxlength="200" value="<%= form.address || '' %>"></label>
-    <label>Logo veya görsel <small>(isteğe bağlı, kare önerilir, en fazla 5 MB)</small><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>
+    <div class="dosya-alan"><span class="dosya-baslik">Logo veya görsel <small>(isteğe bağlı, kare önerilir, en fazla 5 MB)</small></span>
+      <label class="dosya-sec"><input type="file" name="image" accept="image/jpeg,image/png,image/webp"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8.5 5l1.5-2h4l1.5 2"/></svg><span data-dosya-yazi>Görsel seç</span></label></div>
 
     <h2 class="form-baslik">3. Süre, ödeme ve iletişim</h2>
     <label>Süre

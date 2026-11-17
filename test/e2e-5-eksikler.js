@@ -1,4 +1,4 @@
-// Hesap silme/veri indirme, ilan süresi, mesaj engelleme + fotoğraf, kayıtlı arama + zil, vitrin,
+// Hesap silme/veri indirme, ilan süresi, mesaj engelleme + fotoğraf, kayıtlı arama + zil,
 // arama/filtreler, iletişim/SSS, üye engelleme
 const fs = require('fs');
 const { chromium } = require('playwright');
@@ -93,19 +93,7 @@ const { B, ok, sql, run, mails, shot } = require('./helpers');
   await C.goto(`${B}/mesajlar/${lid}/${sid}`);
   ok(await C.locator('.mesaj-yaz').count() === 1, 'engel kaldırılınca mesajlaşma açıldı');
 
-  // ---- Vitrin (test ödeme) ----
   const ilk = await ilanVer(S, 'Kamp Sandalyesi Katlanır', { price: 300, durum: 'iyi' });
-  await S.goto(kaykay);
-  ok(await S.locator('.vitrin-kutu').count() === 1, 'ilan sahibine vitrin kutusu görünüyor');
-  await Promise.all([S.waitForNavigation(), S.click('.vitrin-form button')]);
-  ok(S.url().includes('/test-odeme'), 'vitrin test ödeme sayfası açıldı');
-  await Promise.all([S.waitForNavigation(), S.click('button[value=basarili]')]);
-  ok((await flash(S)).includes('vitrinde'), 'vitrin ödemesi alındı');
-  await C.goto(B + '/ilanlar?il=izmir');
-  ok((await C.locator('.kart-baslik').first().textContent()).includes('Kaykay') && await C.locator('.kart .vitrin-rozet').count() === 1, 'vitrindeki ilan en üstte ve rozetli');
-  await shot(C, 'f-vitrin.png');
-  await A.goto(B + '/yonetim?tab=kargo');
-  ok((await A.content()).includes('1</strong> vitrin satışı'), 'yönetim panelinde vitrin geliri görünüyor');
 
   // ---- İlan süresi ----
   sql("UPDATE listings SET expires_at = datetime('now', '+2 days') WHERE title = 'Kamp Sandalyesi Katlanır'");
