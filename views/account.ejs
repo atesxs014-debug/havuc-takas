@@ -3,7 +3,13 @@
   <h1 class="sayfa-baslik">Merhaba, <%= user.name.split(' ')[0] %> 👋</h1>
   <a class="btn btn-yesil" href="/ilan-ver">+ İlan Ver</a>
 </div>
-<p class="kucuk"><%= user.email %> · <a href="/mesajlar">Mesajlarım<% if (unread) { %> (<%= unread %> yeni)<% } %></a></p>
+<nav class="hesap-linkler">
+  <a href="/mesajlar">💬 Mesajlarım<% if (unread) { %> (<%= unread %>)<% } %></a>
+  <a href="/favorilerim">❤️ Favorilerim</a>
+  <a href="/uye/<%= user.id %>">⭐ Profilim</a>
+  <a href="/isletme">🏪 İşletme Paneli</a>
+  <a href="/hesabim/ayarlar">⚙️ Ayarlar</a>
+</nav>
 <h2 class="bolum-baslik">İlanlarım (<%= ilanlar.length %>)</h2>
 <% if (ilanlar.length) { %>
   <div class="grid"><% ilanlar.forEach(function (ilan) { %><%- include('partials/card', { ilan, konumGoster: true }) %><% }) %></div>

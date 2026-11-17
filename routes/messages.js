@@ -1,6 +1,9 @@
 const express = require('express');
 const db = require('../lib/db');
 const h = require('../lib/helpers');
+const notify = require('../lib/notify');
+const reviews = require('../lib/reviews');
+const { rateLimit } = require('../lib/security');
 
 const router = express.Router();
 
@@ -22,7 +25,7 @@ router.get('/mesajlar', h.requireLogin, (req, res) => {
     other: userName.get(c.other_id),
     ilan: listing.get(c.listing_id),
   })).filter((c) => c.other && c.ilan);
-  res.render('messages', { title: 'Mesajlar', list });
+  res.render('messages', { title: 'Mesajlar', list, noindex: true });
 });
 
 const thread = db.prepare(`SELECT * FROM messages WHERE listing_id = ?
@@ -45,14 +48,18 @@ router.get('/mesajlar/:listingId/:userId', h.requireLogin, (req, res, next) => {
   if (!t) return next();
   markRead.run(t.ilan.id, t.other.id, req.user.id);
   const msgs = thread.all(t.ilan.id, req.user.id, t.other.id, t.other.id, req.user.id);
-  res.render('thread', { title: `${t.other.name} ile mesajlaşma`, ...t, msgs });
+  const puanlanabilir = reviews.canReview(t.ilan, req.user.id) && !reviews.existing(t.ilan.id, req.user.id);
+  res.render('thread', { title: `${t.other.name} ile mesajlaşma`, ...t, msgs, puanlanabilir, noindex: true });
 });
 
-router.post('/mesajlar/:listingId/:userId', h.requireLogin, h.verifyCsrf, (req, res, next) => {
+router.post('/mesajlar/:listingId/:userId', h.requireLogin, h.requireVerified, rateLimit('mesaj', 60, 60), h.verifyCsrf, (req, res, next) => {
   const t = loadThread(req);
   if (!t) return next();
   const body = h.str(req.body.body, 2000);
-  if (body) insert.run(t.ilan.id, req.user.id, t.other.id, body);
+  if (body) {
+    insert.run(t.ilan.id, req.user.id, t.other.id, body);
+    notify.newMessage({ listing: t.ilan, senderId: req.user.id, receiverId: t.other.id, body });
+  }
   res.redirect(`/mesajlar/${t.ilan.id}/${t.other.id}#son`);
 });
 

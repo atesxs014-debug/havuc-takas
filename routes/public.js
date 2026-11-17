@@ -15,6 +15,13 @@ router.get('/', (req, res) => {
     stats: stats.get(),
     toplamAlan: (iller.length + toplamIlce) * 4,
     description: 'Komşundan al, komşuna ver. İl ve ilçene göre ikinci el eşya ve takas ilanları. 0₺ komisyon, elden teslim.',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Havuç Takas',
+      url: res.locals.base + '/',
+      potentialAction: { '@type': 'SearchAction', target: res.locals.base + '/ilanlar?q={search_term_string}', 'query-input': 'required name=search_term_string' },
+    },
   });
 });
 
@@ -34,6 +41,5 @@ for (const [slug, s] of Object.entries(sayfalar)) {
   router.get('/' + slug, (req, res) => res.render(s.view, { title: s.title }));
 }
 
-router.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nDisallow: /yonetim\nDisallow: /mesajlar\n'));
 
 module.exports = router;

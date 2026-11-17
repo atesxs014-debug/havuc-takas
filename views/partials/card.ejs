@@ -3,6 +3,9 @@
   <div class="kart-gorsel" style="--r1:<%= k.renk[0] %>;--r2:<%= k.renk[1] %>">
     <% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt="<%= ilan.title %>" loading="lazy"><% } else { %><%- k.ikon %><% } %>
     <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi</span><% } %>
+    <% if (ilan.status === 'pending') { %><span class="kart-etiket">⏳ İncelemede</span><% } %>
+    <% if (ilan.status === 'rejected') { %><span class="kart-etiket">Yayınlanmadı</span><% } %>
+    <% if (favs.has(ilan.id)) { %><span class="kart-fav" title="Favorilerinde">❤️</span><% } %>
   </div>
   <div class="kart-govde">
     <div class="rozetler">

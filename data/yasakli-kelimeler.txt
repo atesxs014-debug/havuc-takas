@@ -1,0 +1,32 @@
+# Bu kelimelerden birini içeren ilanlar yayına girmez, yönetici onayına düşer.
+# Yönetim panelindeki "Yasaklı kelimeler" sekmesinden de düzenlenebilir. Her satıra bir kelime/ifade.
+kapora
+ön ödeme
+önden ödeme
+peşin ödeme
+kargo ücreti
+western union
+papara
+iban
+havale yap
+kripto
+usdt
+bitcoin
+silah
+tabanca
+ruhsatsız
+mermi
+kurusıkı
+uyuşturucu
+esrar
+bonzai
+reçeteli
+sahte
+replika
+çakma
+kopya ürün
+hesap satış
+bahis
+kumar
+escort
++18

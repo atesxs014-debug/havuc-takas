@@ -12,7 +12,7 @@ const sifre = crypto.randomBytes(6).toString('hex');
 const email = 'demo@havuctakas.local';
 let user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
 if (!user) {
-  const info = db.prepare('INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, 0)')
+  const info = db.prepare('INSERT INTO users (name, email, password_hash, is_admin, email_verified) VALUES (?, ?, ?, 0, 1)')
     .run('Ates Yilmaz', email, bcrypt.hashSync(sifre, 10));
   user = { id: Number(info.lastInsertRowid) };
   console.log(`Demo kullanıcı: ${email} / ${sifre}`);
@@ -31,7 +31,7 @@ const ins = db.prepare(`INSERT INTO listings (user_id, title, description, categ
 ilanlar.forEach((l, i) => ins.run(user.id, ...l, `-${(ilanlar.length - i) * 7} minutes`));
 
 db.prepare(`INSERT INTO ads (il, ilce, slot, business_name, description, phone, address, contact_name, contact_email, months,
-  status, start_date, end_date) VALUES ('izmir', 'buca', 1, 'Örnek Fırın (demo)', 'Bu bir örnek reklamdır. Yönetim panelinden kaldırabilirsiniz.',
-  '0232 000 00 00', 'Buca, İzmir', 'Demo', 'demo@havuctakas.local', 1, 'active', date('now','localtime'), date('now','localtime','+1 months'))`).run();
+  status, start_date, end_date, ref_code, paid) VALUES ('izmir', 'buca', 1, 'Örnek Fırın (demo)', 'Bu bir örnek reklamdır. Yönetim panelinden kaldırabilirsiniz.',
+  '0232 000 00 00', 'Buca, İzmir', 'Demo', 'demo@havuctakas.local', 1, 'active', date('now','localtime'), date('now','localtime','+1 months'), 'HVCDEMO', 1)`).run();
 
 console.log(`${ilanlar.length} demo ilan ve 1 örnek reklam (İzmir/Buca, 1. alan) eklendi.`);

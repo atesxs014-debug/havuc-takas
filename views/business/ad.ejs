@@ -1,0 +1,70 @@
+<%- include('../partials/head') %>
+<% const durumAd = { pending: 'Ödeme/onay bekliyor', active: 'Yayında', rejected: 'Reddedildi', ended: 'Sona erdi' };
+   const topG = gunler.reduce(function (t, g) { return t + g.impressions; }, 0), topT = gunler.reduce(function (t, g) { return t + g.clicks; }, 0);
+   const maxG = Math.max(1, ...gunler.map(function (g) { return g.impressions; })); %>
+<nav class="breadcrumb"><a href="/isletme">İşletme Paneli</a> › <span><%= ad.business_name %></span></nav>
+<div class="bolum-bas">
+  <h1 class="sayfa-baslik"><%= ad.business_name %> <span class="durum durum-<%= ad.status %>"><%= durumAd[ad.status] %></span></h1>
+</div>
+<p class="kucuk">📍 <%= konumAdi(ad.il, ad.ilce) %><%= ad.ilce ? '' : ' (il geneli)' %> · <%= ad.slot %>. alan · Referans: <code><%= ad.ref_code %></code>
+  <% if (ad.status === 'active') { %> · <%= tarih(ad.start_date) %> – <strong><%= tarih(ad.end_date) %></strong><% } %></p>
+
+<% if (ad.status === 'pending' || ad.renew_months) { const tutar = ad.renew_months ? ad.renew_price : ad.price; %>
+  <div class="odeme-kutu">
+    <h2>💳 <%= ad.renew_months ? '+' + ad.renew_months + ' ay uzatma için ödeme' : 'Ödeme bekleniyor' %></h2>
+    <% if (bank.iban) { %>
+      <dl>
+        <% if (tutar) { %><dt>Tutar</dt><dd><strong><%= fiyat(tutar) %></strong></dd><% } %>
+        <dt>IBAN</dt><dd><code class="kopyala" data-kopyala="<%= bank.iban.replace(/\s/g, '') %>"><%= bank.iban %></code></dd>
+        <% if (bank.holder) { %><dt>Alıcı</dt><dd><%= bank.holder %></dd><% } %>
+        <dt>Açıklama</dt><dd><code class="kopyala" data-kopyala="<%= ad.ref_code %>"><%= ad.ref_code %></code></dd>
+      </dl>
+    <% } else { %><p>Ödeme bilgileri e-posta ile gönderilecek. Referans: <code><%= ad.ref_code %></code></p><% } %>
+  </div>
+<% } %>
+
+<section class="istat-kutu">
+  <div class="istat-sayilar">
+    <div><span>Toplam gösterim</span><strong><%= ad.impressions.toLocaleString('tr-TR') %></strong></div>
+    <div><span>Toplam tıklama</span><strong><%= ad.clicks.toLocaleString('tr-TR') %></strong></div>
+    <div><span>Son 30 gün gösterim</span><strong><%= topG.toLocaleString('tr-TR') %></strong></div>
+    <div><span>Son 30 gün tıklama</span><strong><%= topT.toLocaleString('tr-TR') %></strong></div>
+  </div>
+  <h2 class="bolum-baslik-k">Son 30 gün — günlük gösterim</h2>
+  <div class="grafik" role="img" aria-label="Son 30 günlük gösterim grafiği">
+    <% gunler.forEach(function (g) { %>
+      <div class="cubuk" style="--h:<%= Math.round(g.impressions / maxG * 100) %>%" title="<%= g.day.split('-').reverse().join('.') %>: <%= g.impressions %> gösterim, <%= g.clicks %> tıklama"><% if (g.clicks) { %><i></i><% } %></div>
+    <% }) %>
+  </div>
+  <p class="kucuk grafik-alt"><span><%= gunler[0].day.split('-').reverse().join('.') %></span><span>Turuncu nokta: o gün tıklama var</span><span>Bugün</span></p>
+</section>
+
+<% if (ad.status === 'active' && !ad.renew_months) { %>
+  <form method="post" action="/isletme/reklam/<%= ad.id %>/uzat" class="kart-form form uzat-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">⏰ Süreyi uzat</h2>
+    <label>Ek süre
+      <select name="months"><% SURELER.forEach(function (m) { %><option value="<%= m %>"><%= m %> ay<%= aylik ? ' — ' + fiyat(aylik * m) : '' %></option><% }) %></select>
+    </label>
+    <button class="btn btn-turuncu">Uzatma talebi oluştur</button>
+    <p class="kucuk">Talepten sonra ödeme bilgilerini görürsün; ödeme kontrol edilince bitiş tarihin uzar. Alanın sende kalır.</p>
+  </form>
+<% } %>
+
+<% if (['pending', 'active'].includes(ad.status)) { %>
+  <form method="post" action="/isletme/reklam/<%= ad.id %>" enctype="multipart/form-data" class="kart-form form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">✏️ Reklam içeriğini düzenle</h2>
+    <label>İşletme adı<input name="business_name" required maxlength="80" value="<%= ad.business_name %>"></label>
+    <label>Kısa tanıtım<textarea name="description" rows="3" required minlength="10" maxlength="200"><%= ad.description %></textarea></label>
+    <div class="iki-kolon">
+      <label>Telefon<input type="tel" name="phone" value="<%= ad.phone || '' %>"></label>
+      <label>Web sitesi / Instagram<input name="website" value="<%= ad.website || '' %>"></label>
+    </div>
+    <label>Adres<input name="address" maxlength="200" value="<%= ad.address || '' %>"></label>
+    <% if (ad.image) { %><div class="mevcut-foto"><img src="/uploads/<%= ad.image %>" alt=""><label class="radio"><input type="checkbox" name="remove_image" value="1"> Logoyu kaldır</label></div><% } %>
+    <label>Yeni logo <small>(isteğe bağlı)</small><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>
+    <button class="btn btn-yesil">Kaydet</button>
+  </form>
+<% } %>
+<%- include('../partials/foot') %>

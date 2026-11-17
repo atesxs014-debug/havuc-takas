@@ -6,8 +6,27 @@
 <title><%= title ? title + ' | ' + SITE_NAME : SITE_NAME + ' – Komisyonsuz Takas Platformu' %></title>
 <meta name="description" content="<%= description || 'Havuç Takas: il ve ilçene göre ikinci el eşya ve takas ilanları. 0₺ komisyon, elden teslim.' %>">
 <meta name="theme-color" content="#16843f">
+<% if (noindex) { %><meta name="robots" content="noindex, follow"><% } %>
+<link rel="canonical" href="<%= canonical %>">
+<meta property="og:site_name" content="Havuç Takas">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:type" content="<%= ogType %>">
+<meta property="og:title" content="<%= title || 'Havuç Takas – Komşundan al, komşuna ver' %>">
+<meta property="og:description" content="<%= description || 'İl ve ilçene göre ikinci el eşya ve takas ilanları. 0₺ komisyon, elden teslim.' %>">
+<meta property="og:url" content="<%= canonical %>">
+<meta property="og:image" content="<%= ogImage %>">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/static/img/havuc.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/static/css/style.css?v=2">
+<link rel="icon" href="/static/img/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Havuç Takas">
+<link rel="stylesheet" href="/static/css/style.css?v=3">
+<% if (jsonLd) { %><script type="application/ld+json"><%- JSON.stringify(jsonLd).replace(/</g, '\\u003c') %></script><% } %>
+<% if (cfg.analytics.umamiSrc && cfg.analytics.umamiId) { %><script defer src="<%= cfg.analytics.umamiSrc %>" data-website-id="<%= cfg.analytics.umamiId %>"></script><% } %>
+<% if (cfg.analytics.plausibleDomain) { %><script defer data-domain="<%= cfg.analytics.plausibleDomain %>" src="<%= cfg.analytics.plausibleSrc %>"></script><% } %>
+<% if (cfg.turnstileKey) { %><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><% } %>
 </head>
 <body>
 <header class="topbar">
@@ -17,7 +36,9 @@
       <a href="/ilanlar" class="<%= path.startsWith('/ilanlar') || path.startsWith('/il/') ? 'aktif' : '' %>">İlanlar</a>
       <% if (user) { %>
         <a href="/mesajlar">Mesajlar<% if (unread) { %> <span class="rozet"><%= unread %></span><% } %></a>
+        <a href="/favorilerim">Favoriler</a>
         <a href="/hesabim">Hesabım</a>
+        <a href="/isletme">İşletme</a>
         <% if (user.is_admin) { %><a href="/yonetim">Yönetim</a><% } %>
         <form method="post" action="/cikis" class="nav-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Çıkış</button></form>
       <% } else { %>
@@ -31,4 +52,9 @@
   </div>
 </header>
 <main class="wrap sayfa">
+<% if (user && !user.email_verified && cfg.requireVerify && !path.startsWith('/dogrula')) { %>
+  <div class="flash flash-info dogrula-bant">📧 E-posta adresini doğrulamadın. İlan vermek ve mesaj göndermek için <%= user.email %> adresine gelen bağlantıya tıkla.
+    <form method="post" action="/dogrula/tekrar"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= path %>"><button class="linkbtn">Tekrar gönder</button></form>
+  </div>
+<% } %>
 <% if (flash) { %><div class="flash flash-<%= flash.type %>" role="status"><%= flash.text %></div><% } %>

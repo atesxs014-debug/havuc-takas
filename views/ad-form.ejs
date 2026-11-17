@@ -3,11 +3,17 @@
   <p class="hero-ust">📣 İŞLETMENİZ İÇİN REKLAM VERİN</p>
   <h1>Mahallendeki müşterilere<br><span class="yesil">doğrudan ulaş.</span></h1>
   <p class="hero-metin">Türkiye'nin 81 ilinde ve <%= iller.reduce(function (t, i) { return t + i.ilceler.length; }, 0) %> ilçesinde, her bölge için yalnızca <strong><%= SLOT_SAYISI %> reklam alanı</strong> var. İlçe reklamın, o ilçedeki ilan listesinde ve ilan sayfalarında; il geneli reklamın ise il sayfasında gösterilir.</p>
-  <div class="fiyat-kutular">
-    <div><strong>İlçe reklamı</strong><span><%= fiyatlar.ilce ? fiyat(fiyatlar.ilce) + ' / ay' : 'Teklif alın' %></span></div>
-    <div><strong>İl geneli reklam</strong><span><%= fiyatlar.il ? fiyat(fiyatlar.il) + ' / ay' : 'Teklif alın' %></span></div>
-    <div><strong>Toplam alan</strong><span><%= toplamAlan.toLocaleString('tr-TR') %></span></div>
+  <div class="tablo-sar fiyat-tablo">
+    <table class="tablo">
+      <thead><tr><th>Aylık fiyat</th><th>İlçe reklamı</th><th>İl geneli reklam</th></tr></thead>
+      <tbody>
+        <% gruplar.forEach(function (g) { const t = fiyatTablo[g.key]; %>
+          <tr><td><%= g.ad %></td><td><%= t.ilce ? fiyat(t.ilce) : 'Teklif alın' %></td><td><%= t.il ? fiyat(t.il) : 'Teklif alın' %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
   </div>
+  <p class="kucuk">Toplam <%= toplamAlan.toLocaleString('tr-TR') %> reklam alanı · Ödeme havale/EFT ile, onaydan sonra yayın.</p>
 </section>
 
 <div class="form-sayfa">
@@ -35,17 +41,24 @@
     <label>Adres <small>(isteğe bağlı)</small><input name="address" maxlength="200" value="<%= form.address || '' %>"></label>
     <label>Logo veya görsel <small>(isteğe bağlı, kare önerilir, en fazla 5 MB)</small><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label>
 
-    <h2 class="form-baslik">3. Süre ve iletişim</h2>
+    <h2 class="form-baslik">3. Süre, ödeme ve iletişim</h2>
     <label>Süre
-      <select name="months"><% SURELER.forEach(function (m) { %><option value="<%= m %>" <%= form.months == m ? 'selected' : '' %>><%= m %> ay</option><% }) %></select>
+      <select name="months" class="js-sure"><% SURELER.forEach(function (m) { %><option value="<%= m %>" <%= form.months == m ? 'selected' : '' %>><%= m %> ay</option><% }) %></select>
     </label>
+    <div class="tutar-kutu" id="tutarKutu" hidden>Ödenecek tutar: <strong id="tutar"></strong></div>
+    <p class="kucuk">💳 Ödeme <strong>havale/EFT</strong> ile yapılır. Başvurudan sonra IBAN ve size özel referans kodu gösterilir ve e-posta ile gönderilir. Ödemeniz kontrol edilince reklamınız yayına girer.</p>
     <div class="iki-kolon">
       <label>Yetkili adı<input name="contact_name" required value="<%= form.contact_name || '' %>"></label>
       <label>E-posta<input type="email" name="contact_email" required value="<%= form.contact_email || '' %>"></label>
     </div>
     <label class="radio"><input type="checkbox" name="kvkk" value="1" required> <span>Reklam içeriğimin yasalara uygun olduğunu onaylıyor, <a href="/kvkk" target="_blank">KVKK Aydınlatma Metni</a>'ni kabul ediyorum.</span></label>
-    <button class="btn btn-turuncu tam">Başvuruyu Gönder</button>
-    <p class="kucuk">Başvurunuz incelendikten sonra size e-posta ile dönüş yapılır; ödeme ve onay sonrası reklamınız seçtiğiniz alanda yayına girer.</p>
+    <%- include('partials/turnstile') %>
+    <% if (user) { %>
+      <button class="btn btn-turuncu tam">Başvuruyu Gönder</button>
+      <p class="kucuk">Başvurunuz ve reklam istatistikleriniz <a href="/isletme">İşletme Paneli</a>'nizde görünür.</p>
+    <% } else { %>
+      <div class="flash flash-info">Başvuru yapmak ve reklamınızı işletme panelinden yönetmek için <a href="/giris?next=<%= encodeURIComponent('/reklam-ver' + (form.il ? '?il=' + form.il + '&ilce=' + form.ilce + '&alan=' + form.slot : '')) %>">giriş yapın</a> veya <a href="/kayit?next=<%= encodeURIComponent('/reklam-ver') %>">ücretsiz üye olun</a>.</div>
+    <% } %>
   </form>
 </div>
 <%- include('partials/foot') %>

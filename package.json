@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning server.js",
     "dev": "node --env-file-if-exists=.env --watch --no-warnings=ExperimentalWarning server.js",
-    "seed": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/seed.js"
+    "seed": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/seed.js",
+    "yedek": "node --env-file-if-exists=.env --no-warnings=ExperimentalWarning scripts/yedek.js"
   },
   "engines": {
     "node": ">=22.13"

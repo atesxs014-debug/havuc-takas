@@ -3,16 +3,40 @@
   <a href="/">Anasayfa</a> › <a href="/ilanlar?kategori=<%= kategori.slug %>"><%= kategori.ad %></a> › <span><%= ilan.title %></span>
 </nav>
 
+<% if (ilan.status === 'pending') { %><div class="flash flash-info">⏳ Bu ilan incelemede, şu an sadece sen<%= user && user.is_admin ? ' ve yöneticiler' : '' %> görebilirsin.<% if (user && user.is_admin && ilan.mod_reason) { %> Yakalanan: <%= ilan.mod_reason %><% } %></div><% } %>
+<% if (ilan.status === 'rejected') { %><div class="flash flash-error">Bu ilan kurallara uymadığı için yayınlanmadı.</div><% } %>
 <div class="detay">
   <div class="detay-sol">
-    <div class="detay-gorsel" style="--r1:<%= kategori.renk[0] %>;--r2:<%= kategori.renk[1] %>">
-      <% if (ilan.image) { %><img src="/uploads/<%= ilan.image %>" alt="<%= ilan.title %>"><% } else { %><%- kategori.ikon %><% } %>
-      <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi / Satıldı</span><% } %>
+    <div class="galeri" data-galeri>
+      <div class="detay-gorsel" style="--r1:<%= kategori.renk[0] %>;--r2:<%= kategori.renk[1] %>">
+        <% if (fotolar.length) { %><img src="/uploads/<%= fotolar[0].file %>" alt="<%= ilan.title %>" data-galeri-ana><% } else { %><%- kategori.ikon %><% } %>
+        <% if (ilan.status === 'sold') { %><span class="kart-etiket">Takas edildi / Satıldı</span><% } %>
+        <% if (fotolar.length > 1) { %>
+          <button type="button" class="galeri-ok sol" data-galeri-onceki aria-label="Önceki fotoğraf">‹</button>
+          <button type="button" class="galeri-ok sag" data-galeri-sonraki aria-label="Sonraki fotoğraf">›</button>
+          <span class="galeri-sayac" data-galeri-sayac>1 / <%= fotolar.length %></span>
+        <% } %>
+      </div>
+      <% if (fotolar.length > 1) { %>
+        <div class="galeri-kucuk">
+          <% fotolar.forEach(function (f, i) { %>
+            <button type="button" class="<%= i === 0 ? 'secili' : '' %>" data-galeri-src="/uploads/<%= f.file %>" aria-label="Fotoğraf <%= i + 1 %>"><img src="/uploads/<%= f.thumb %>" alt="" loading="lazy"></button>
+          <% }) %>
+        </div>
+      <% } %>
     </div>
   </div>
 
   <div class="detay-sag">
-    <h1 class="detay-baslik"><%= ilan.title %></h1>
+    <div class="baslik-satir">
+      <h1 class="detay-baslik"><%= ilan.title %></h1>
+      <% if (!isOwner) { const fav = favs.has(ilan.id); %>
+        <form method="post" action="/ilan/<%= ilan.id %>/favori" class="fav-form">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="islem" value="<%= fav ? 'cikar' : 'ekle' %>">
+          <button class="fav-btn <%= fav ? 'aktif' : '' %>" aria-pressed="<%= fav %>" aria-label="<%= fav ? 'Favorilerden çıkar' : 'Favorilere ekle' %>" title="<%= fav ? 'Favorilerden çıkar' : 'Favorilere ekle' %>"><span><%= fav ? '❤️' : '🤍' %></span> <small><%= favSayisi %></small></button>
+        </form>
+      <% } %>
+    </div>
     <p class="detay-meta">📍 <a href="/il/<%= ilan.il %>/<%= ilan.ilce %>"><%= konumAdi(ilan.il, ilan.ilce) %></a> · <%= ilan.views %> görüntülenme · <%= tarih(ilan.created_at) %></p>
     <p class="detay-fiyat">
       <% if (ilan.price != null) { %><%= fiyat(ilan.price) %><% } %>
@@ -23,16 +47,17 @@
     <div class="satici-kart">
       <div class="satici">
         <span class="avatar"><%= ilan.seller_name.charAt(0).toLocaleUpperCase('tr') %></span>
-        <div><strong><%= ilan.seller_name %></strong><small><%= new Date(ilan.seller_since.replace(' ', 'T') + 'Z').getFullYear() %>'den beri üye · <%= ilan.seller_count %> ilan</small></div>
+        <div><a href="/uye/<%= ilan.user_id %>" class="satici-ad"><strong><%= ilan.seller_name %></strong></a>
+          <small><% if (ilan.seller_reviews) { %>⭐ <%= ilan.seller_rating %> (<%= ilan.seller_reviews %> değerlendirme) · <% } %><%= new Date(ilan.seller_since.replace(' ', 'T') + 'Z').getFullYear() %>'den beri üye · <%= ilan.seller_count %> ilan</small></div>
       </div>
       <% if (isOwner) { %>
         <a class="btn btn-yesil tam" href="/ilan/<%= ilan.id %>/duzenle">✏️ İlanı Düzenle</a>
-        <form method="post" action="/ilan/<%= ilan.id %>/durum" class="sahip-form">
+        <% if (['active', 'sold'].includes(ilan.status)) { %><form method="post" action="/ilan/<%= ilan.id %>/durum" class="sahip-form">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <% if (ilan.status === 'active') { %><button name="status" value="sold" class="btn btn-cizgi">✅ Takas edildi / Satıldı</button>
           <% } else { %><button name="status" value="active" class="btn btn-cizgi">Tekrar yayınla</button><% } %>
           <button name="status" value="removed" class="btn btn-cizgi kirmizi" data-confirm="İlan kaldırılsın mı?">🗑 Kaldır</button>
-        </form>
+        </form><% } %>
       <% } else { %>
         <a class="btn btn-yesil tam" href="/mesajlar/<%= ilan.id %>/<%= ilan.user_id %>">💬 Satıcıya Mesaj Gönder</a>
         <details class="sikayet">

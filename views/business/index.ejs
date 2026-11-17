@@ -1,0 +1,29 @@
+<%- include('../partials/head') %>
+<div class="bolum-bas">
+  <h1 class="sayfa-baslik">İşletme Paneli</h1>
+  <a class="btn btn-turuncu" href="/reklam-ver">+ Yeni Reklam</a>
+</div>
+<% const durumAd = { pending: 'Ödeme/onay bekliyor', active: 'Yayında', rejected: 'Reddedildi', ended: 'Sona erdi' }; %>
+<% if (reklamlar.length) { %>
+  <div class="admin-liste">
+    <% reklamlar.forEach(function (ad) { const ctr = ad.impressions ? (ad.clicks / ad.impressions * 100).toFixed(1) : '0.0'; %>
+      <a class="admin-kart isletme-kart" href="/isletme/reklam/<%= ad.id %>">
+        <div class="admin-kart-bas">
+          <% if (ad.image) { %><img class="reklam-logo" src="/uploads/<%= ad.image %>" alt=""><% } else { %><span class="reklam-logo harf"><%= ad.business_name.charAt(0).toLocaleUpperCase('tr') %></span><% } %>
+          <div><strong><%= ad.business_name %></strong><small>📍 <%= konumAdi(ad.il, ad.ilce) %><%= ad.ilce ? '' : ' (il geneli)' %> · <%= ad.slot %>. alan · <%= ad.ref_code %></small></div>
+          <span class="durum durum-<%= ad.status %>"><%= durumAd[ad.status] %></span>
+        </div>
+        <div class="istat-satir">
+          <span><strong><%= ad.impressions.toLocaleString('tr-TR') %></strong> gösterim</span>
+          <span><strong><%= ad.clicks.toLocaleString('tr-TR') %></strong> tıklama</span>
+          <span><strong>%<%= ctr %></strong> tıklama oranı</span>
+          <% if (ad.status === 'active') { %><span>Bitiş: <strong><%= tarih(ad.end_date) %></strong></span><% } %>
+          <% if (ad.renew_months) { %><span class="takas-rozet">+<%= ad.renew_months %> ay uzatma ödemesi bekleniyor</span><% } %>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+<% } else { %>
+  <div class="bos-durum"><p>Henüz reklamın yok. İlçende 4 alandan birini ayır, mahallendeki müşterilere ulaş.</p><a class="btn btn-turuncu" href="/reklam-ver">Reklam Ver</a></div>
+<% } %>
+<%- include('../partials/foot') %>

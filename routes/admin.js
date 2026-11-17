@@ -1,43 +1,67 @@
+const fs = require('node:fs');
 const express = require('express');
 const db = require('../lib/db');
 const h = require('../lib/helpers');
+const config = require('../lib/config');
+const pricing = require('../lib/pricing');
+const moderation = require('../lib/moderation');
+const notify = require('../lib/notify');
+const backup = require('../lib/backup');
 const { isSlotFree, expireOld, SLOT_SAYISI } = require('../lib/ads');
 
 const router = express.Router();
 router.use(h.requireAdmin);
+router.use((req, res, next) => { res.locals.noindex = true; next(); });
 
 const counts = db.prepare(`SELECT
   (SELECT COUNT(*) FROM ads WHERE status = 'pending') AS bekleyen,
   (SELECT COUNT(*) FROM ads WHERE status = 'active') AS aktif,
+  (SELECT COUNT(*) FROM ads WHERE status = 'active' AND renew_months IS NOT NULL) AS uzatma,
+  (SELECT COUNT(*) FROM listings WHERE status = 'pending') AS onay,
   (SELECT COUNT(*) FROM reports WHERE status = 'open') AS sikayet,
   (SELECT COUNT(*) FROM listings WHERE status = 'active') AS ilan,
   (SELECT COUNT(*) FROM users) AS uye`);
 
 const SEKMELER = {
   bekleyen: "SELECT * FROM ads WHERE status = 'pending' ORDER BY created_at",
-  aktif: "SELECT * FROM ads WHERE status = 'active' ORDER BY end_date",
+  aktif: "SELECT * FROM ads WHERE status = 'active' ORDER BY renew_months IS NULL, end_date",
   gecmis: "SELECT * FROM ads WHERE status IN ('rejected','ended') ORDER BY id DESC LIMIT 200",
 };
+const TABS = ['bekleyen', 'aktif', 'gecmis', 'onay', 'sikayet', 'ilan', 'uye', 'fiyatlar', 'kelimeler', 'yedek'];
+
+function backupList() {
+  try {
+    return fs.readdirSync(config.backup.dir).filter((f) => f.endsWith('.db')).sort().reverse()
+      .map((f) => ({ f, size: fs.statSync(require('node:path').join(config.backup.dir, f)).size }));
+  } catch { return []; }
+}
 
 router.get('/', (req, res) => {
   expireOld();
-  const tab = ['bekleyen', 'aktif', 'gecmis', 'sikayet', 'ilan', 'uye'].includes(req.query.tab) ? req.query.tab : 'bekleyen';
+  const tab = TABS.includes(req.query.tab) ? req.query.tab : 'bekleyen';
   let rows = [];
+  const extra = {};
   if (SEKMELER[tab]) rows = db.prepare(SEKMELER[tab]).all();
+  else if (tab === 'onay') rows = db.prepare(`SELECT l.*, u.name AS seller FROM listings l JOIN users u ON u.id = l.user_id
+      WHERE l.status = 'pending' ORDER BY l.id`).all();
   else if (tab === 'sikayet') rows = db.prepare(`SELECT r.*, l.title, l.id AS lid, l.status AS lstatus FROM reports r
       JOIN listings l ON l.id = r.listing_id WHERE r.status = 'open' ORDER BY r.id DESC`).all();
   else if (tab === 'ilan') rows = db.prepare(`SELECT l.*, u.name AS seller FROM listings l JOIN users u ON u.id = l.user_id
       ORDER BY l.id DESC LIMIT 200`).all();
   else if (tab === 'uye') rows = db.prepare(`SELECT u.*, (SELECT COUNT(*) FROM listings WHERE user_id = u.id) AS ilan_sayisi
       FROM users u ORDER BY u.id DESC LIMIT 200`).all();
-  res.render('admin', { title: 'Yönetim Paneli', tab, rows, c: counts.get(), SLOT_SAYISI });
+  else if (tab === 'fiyatlar') Object.assign(extra, { gruplar: pricing.GRUPLAR, fiyatTablo: pricing.tablo(), ozel: pricing.overrides() });
+  else if (tab === 'kelimeler') extra.kelimeler = moderation.wordsText();
+  else if (tab === 'yedek') Object.assign(extra, { yedekler: backupList(), yedekDir: config.backup.dir, keep: config.backup.keepDays });
+  res.render('admin', { title: 'Yönetim Paneli', tab, rows, c: counts.get(), SLOT_SAYISI, ...extra });
 });
 
 const getAd = db.prepare('SELECT * FROM ads WHERE id = ?');
-const approve = db.prepare(`UPDATE ads SET status = 'active', slot = ?, start_date = date('now','localtime'),
-  end_date = date('now','localtime', '+' || ? || ' months'), admin_note = ? WHERE id = ?`);
+const approve = db.prepare(`UPDATE ads SET status = 'active', paid = 1, slot = ?, months = ?, start_date = date('now','localtime'),
+  end_date = date('now','localtime', '+' || ? || ' months'), admin_note = COALESCE(?, admin_note) WHERE id = ?`);
 const setStatus = db.prepare('UPDATE ads SET status = ?, admin_note = COALESCE(?, admin_note) WHERE id = ?');
-const extend = db.prepare(`UPDATE ads SET end_date = date(end_date, '+' || ? || ' months') WHERE id = ? AND status = 'active'`);
+const extend = db.prepare(`UPDATE ads SET end_date = date(end_date, '+' || ? || ' months'), renew_months = NULL, renew_price = NULL,
+  reminded = 0 WHERE id = ? AND status = 'active'`);
 
 router.post('/reklam/:id/:islem', h.verifyCsrf, (req, res, next) => {
   const ad = getAd.get(parseInt(req.params.id, 10) || 0);
@@ -54,13 +78,28 @@ router.post('/reklam/:id/:islem', h.verifyCsrf, (req, res, next) => {
         h.flash(req, 'error', `${h.konumAdi(ad.il, ad.ilce)} için ${slot}. alan dolu. Başka bir alan numarası seçin.`);
         break;
       }
-      approve.run(slot, months, note, ad.id);
-      h.flash(req, 'success', `"${ad.business_name}" reklamı ${slot}. alanda yayında.`);
+      approve.run(slot, months, months, note, ad.id);
+      notify.adApproved(getAd.get(ad.id));
+      h.flash(req, 'success', `"${ad.business_name}" reklamı ${slot}. alanda yayında. İşletmeye e-posta gönderildi.`);
       break;
     }
-    case 'reddet': setStatus.run('rejected', note, ad.id); h.flash(req, 'success', 'Başvuru reddedildi.'); break;
+    case 'reddet':
+      setStatus.run('rejected', note, ad.id);
+      notify.adRejected(ad, note);
+      h.flash(req, 'success', 'Başvuru reddedildi, işletmeye bilgi verildi.');
+      break;
     case 'durdur': setStatus.run('ended', note, ad.id); h.flash(req, 'success', 'Reklam yayından kaldırıldı.'); break;
-    case 'uzat': extend.run(Math.min(24, Math.max(1, parseInt(req.body.months, 10) || 1)), ad.id); h.flash(req, 'success', 'Reklam süresi uzatıldı.'); break;
+    case 'uzat': {
+      const months = Math.min(24, Math.max(1, parseInt(req.body.months, 10) || ad.renew_months || 1));
+      extend.run(months, ad.id);
+      if (ad.renew_months) notify.renewApproved(getAd.get(ad.id));
+      h.flash(req, 'success', `Reklam süresi ${months} ay uzatıldı.`);
+      break;
+    }
+    case 'uzatma-iptal':
+      db.prepare('UPDATE ads SET renew_months = NULL, renew_price = NULL WHERE id = ?').run(ad.id);
+      h.flash(req, 'success', 'Uzatma talebi silindi.');
+      break;
     default: return next();
   }
   res.redirect(back);
@@ -71,13 +110,45 @@ router.post('/sikayet/:id/kapat', h.verifyCsrf, (req, res) => {
   res.redirect('/yonetim?tab=sikayet');
 });
 
-router.post('/ilan/:id/durum', h.verifyCsrf, (req, res) => {
-  const status = req.body.status === 'active' ? 'active' : 'removed';
-  const id = parseInt(req.params.id, 10) || 0;
-  db.prepare('UPDATE listings SET status = ? WHERE id = ?').run(status, id);
-  if (status === 'removed') db.prepare("UPDATE reports SET status = 'closed' WHERE listing_id = ?").run(id);
-  h.flash(req, 'success', status === 'removed' ? 'İlan kaldırıldı.' : 'İlan tekrar yayında.');
-  res.redirect('/yonetim?tab=' + (req.body.back === 'sikayet' ? 'sikayet' : 'ilan'));
+const listingById = db.prepare('SELECT * FROM listings WHERE id = ?');
+router.post('/ilan/:id/durum', h.verifyCsrf, (req, res, next) => {
+  const l = listingById.get(parseInt(req.params.id, 10) || 0);
+  if (!l) return next();
+  const status = { active: 'active', removed: 'removed', rejected: 'rejected' }[req.body.status] || 'removed';
+  db.prepare('UPDATE listings SET status = ?, mod_reason = CASE WHEN ? = \'active\' THEN NULL ELSE mod_reason END WHERE id = ?').run(status, status, l.id);
+  if (status !== 'active') db.prepare("UPDATE reports SET status = 'closed' WHERE listing_id = ?").run(l.id);
+  if (l.status === 'pending') notify.listingDecision(l, status === 'active');
+  h.flash(req, 'success', status === 'active' ? 'İlan yayında.' : 'İlan yayından kaldırıldı.');
+  const back = ['sikayet', 'onay'].includes(req.body.back) ? req.body.back : 'ilan';
+  res.redirect('/yonetim?tab=' + back);
+});
+
+router.post('/fiyatlar', h.verifyCsrf, (req, res) => {
+  pricing.setTablo(req.body);
+  h.flash(req, 'success', 'Fiyatlar kaydedildi.');
+  res.redirect('/yonetim?tab=fiyatlar');
+});
+
+router.post('/fiyatlar/ozel', h.verifyCsrf, (req, res) => {
+  const ok = pricing.setOverride(h.str(req.body.il, 60), h.str(req.body.ilce, 60), req.body.price || '');
+  h.flash(req, ok ? 'success' : 'error', ok ? 'Özel fiyat kaydedildi (boş bırakılırsa silinir).' : 'Geçersiz il/ilçe.');
+  res.redirect('/yonetim?tab=fiyatlar');
+});
+
+router.post('/kelimeler', h.verifyCsrf, (req, res) => {
+  moderation.setWords(String(req.body.kelimeler || '').slice(0, 20000));
+  h.flash(req, 'success', 'Yasaklı kelime listesi güncellendi.');
+  res.redirect('/yonetim?tab=kelimeler');
+});
+
+router.post('/yedek', h.verifyCsrf, (req, res) => {
+  try {
+    const f = backup.run({ force: true });
+    h.flash(req, 'success', `Yedek alındı: ${f}`);
+  } catch (e) {
+    h.flash(req, 'error', 'Yedek alınamadı: ' + e.message);
+  }
+  res.redirect('/yonetim?tab=yedek');
 });
 
 module.exports = router;

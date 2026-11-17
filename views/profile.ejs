@@ -1,0 +1,26 @@
+<%- include('partials/head') %>
+<section class="profil">
+  <span class="avatar buyuk"><%= uye.name.charAt(0).toLocaleUpperCase('tr') %></span>
+  <div>
+    <h1 class="sayfa-baslik"><%= uye.name %></h1>
+    <p class="kucuk"><%= new Date(uye.created_at.replace(' ', 'T') + 'Z').getFullYear() %>'den beri üye · <%= satilan %> tamamlanan takas/satış</p>
+    <p class="puan-ozet"><% if (ozet.n) { %><span class="yildiz-goster" style="--p:<%= ozet.ort / 5 * 100 %>%">★★★★★</span> <strong><%= ozet.ort %></strong> <span class="kucuk">(<%= ozet.n %> değerlendirme)</span><% } else { %><span class="kucuk">Henüz değerlendirme yok</span><% } %></p>
+  </div>
+</section>
+
+<h2 class="bolum-baslik">İlanları</h2>
+<% if (ilanlar.length) { %>
+  <div class="grid"><% ilanlar.forEach(function (ilan) { %><%- include('partials/card', { ilan, konumGoster: true }) %><% }) %></div>
+<% } else { %><p class="kucuk">Yayında ilanı yok.</p><% } %>
+
+<h2 class="bolum-baslik" style="margin-top:28px">Değerlendirmeler</h2>
+<% if (yorumlar.length) { %>
+  <ul class="yorumlar">
+    <% yorumlar.forEach(function (r) { %>
+      <li><span class="yildiz-goster" style="--p:<%= r.score * 20 %>%">★★★★★</span>
+        <strong><%= r.reviewer %></strong> <small class="kucuk">· <%= r.title %> · <%= tarih(r.created_at) %></small>
+        <% if (r.comment) { %><p><%= r.comment %></p><% } %></li>
+    <% }) %>
+  </ul>
+<% } else { %><p class="kucuk">Takas tamamlanan alıcılar satıcıyı mesajlaşma sayfasından puanlayabilir.</p><% } %>
+<%- include('partials/foot') %>

@@ -1,7 +1,25 @@
 <%- include('partials/head') %>
+<div class="form-sayfa">
 <div class="bos-durum"><div class="buyuk-emoji">🎉</div>
   <h1>Başvurunuz alındı</h1>
-  <p><strong><%= form.business_name %></strong> için <strong><%= konum %></strong> bölgesindeki <strong><%= form.slot %>. reklam alanı</strong> başvurunuz (<%= form.months %> ay) incelemeye alındı. <%= form.contact_email %> adresine dönüş yapacağız.</p>
-  <a class="btn btn-yesil" href="/">Anasayfaya dön</a>
+  <p><strong><%= ad.business_name %></strong> için <strong><%= konum %></strong> bölgesindeki <strong><%= ad.slot %>. reklam alanı</strong> (<%= ad.months %> ay) başvurunuz kaydedildi.</p>
+</div>
+<div class="odeme-kutu">
+  <h2>💳 Ödeme bilgileri (Havale/EFT)</h2>
+  <% if (bank.iban) { %>
+    <dl>
+      <% if (ad.price) { %><dt>Tutar</dt><dd><strong><%= fiyat(ad.price) %></strong></dd><% } %>
+      <dt>IBAN</dt><dd><code class="kopyala" data-kopyala="<%= bank.iban.replace(/\s/g, '') %>"><%= bank.iban %></code></dd>
+      <% if (bank.holder) { %><dt>Alıcı</dt><dd><%= bank.holder %></dd><% } %>
+      <% if (bank.name) { %><dt>Banka</dt><dd><%= bank.name %></dd><% } %>
+      <dt>Açıklama</dt><dd><code class="kopyala" data-kopyala="<%= ad.ref_code %>"><%= ad.ref_code %></code> <small>(mutlaka yazın)</small></dd>
+    </dl>
+    <% if (!ad.price) { %><p class="kucuk">Bu bölge için fiyat henüz belirlenmedi; tutarı size e-posta ile bildireceğiz.</p><% } %>
+  <% } else { %>
+    <p>Referans kodunuz: <code><%= ad.ref_code %></code>. Ödeme bilgileri e-posta ile gönderilecek.</p>
+  <% } %>
+  <p class="kucuk">Bu bilgiler <%= ad.contact_email %> adresine de gönderildi. Ödemeniz kontrol edilince reklamınız yayına girer ve size haber veririz.</p>
+  <a class="btn btn-yesil" href="/isletme">İşletme Panelime Git</a>
+</div>
 </div>
 <%- include('partials/foot') %>

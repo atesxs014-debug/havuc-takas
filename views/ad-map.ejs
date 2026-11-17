@@ -6,13 +6,14 @@
 <p class="kucuk">Her il ve her ilçe için <%= SLOT_SAYISI %> reklam alanı vardır. İl satırına tıklayarak o ilin ilçelerini ve boş alanları görebilirsiniz.</p>
 <div class="tablo-sar">
 <table class="tablo">
-  <thead><tr><th>Plaka</th><th>İl</th><th>İlçe</th><th>Toplam alan</th><th>Boş</th><th></th></tr></thead>
+  <thead><tr><th>Plaka</th><th>İl</th><th>İlçe</th><th>Fiyat grubu</th><th>Toplam alan</th><th>Boş</th><th></th></tr></thead>
   <tbody>
     <% satirlar.forEach(function (s) { %>
       <tr>
         <td><%= String(s.il.plaka).padStart(2, '0') %></td>
         <td><a href="/il/<%= s.il.slug %>"><%= s.il.ad %></a></td>
         <td><%= s.il.ilceler.length %></td>
+        <td><%= gruplar.find(function (g) { return g.key === s.grup; }).ad %></td>
         <td><%= s.toplam %></td>
         <td><span class="<%= s.bos ? 'yesil' : 'kirmizi' %>"><%= s.bos %></span></td>
         <td><a class="kucuk-link" href="/reklam-ver?il=<%= s.il.slug %>">Seç →</a></td>

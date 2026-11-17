@@ -1,0 +1,19 @@
+<%- include('../partials/head') %>
+<div class="form-sayfa dar">
+  <h1 class="sayfa-baslik">Şifremi Unuttum</h1>
+  <% if (typeof sent !== 'undefined' && sent) { %>
+    <div class="flash flash-success">Bu e-posta ile kayıtlı bir hesap varsa şifre sıfırlama bağlantısı gönderdik. Bağlantı 1 saat geçerli. Spam klasörünü de kontrol et.</div>
+    <p class="merkez"><a href="/giris">Girişe dön</a></p>
+  <% } else { %>
+    <% if (typeof error !== 'undefined' && error) { %><div class="flash flash-error"><%= error %></div><% } %>
+    <form method="post" action="/sifremi-unuttum" class="form kart-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <p class="kucuk">Hesabına kayıtlı e-posta adresini yaz, sana yeni şifre belirleme bağlantısı gönderelim.</p>
+      <label>E-posta<input type="email" name="email" required autocomplete="email" value="<%= form.email || '' %>"></label>
+      <%- include('../partials/turnstile') %>
+      <button class="btn btn-yesil tam">Bağlantı gönder</button>
+      <p class="kucuk merkez"><a href="/giris">Girişe dön</a></p>
+    </form>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

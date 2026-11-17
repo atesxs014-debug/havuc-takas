@@ -10,6 +10,17 @@
       <div class="balon <%= m.sender_id === user.id ? 'benim' : '' %>" <%= i === msgs.length - 1 ? 'id=son' : '' %>><%= m.body %><small><%= tarihSaat(m.created_at) %></small></div>
     <% }) %>
   </div>
+  <% if (puanlanabilir) { %>
+    <form method="post" action="/ilan/<%= ilan.id %>/degerlendir" class="puan-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <strong>Takas tamamlandı! <%= other.name %>'ı değerlendir:</strong>
+      <div class="yildizlar" role="radiogroup" aria-label="Puan">
+        <% for (let i = 5; i >= 1; i--) { %><input type="radio" name="score" value="<%= i %>" id="y<%= i %>" required><label for="y<%= i %>" title="<%= i %> yıldız">★</label><% } %>
+      </div>
+      <input name="comment" maxlength="500" placeholder="Kısa bir yorum (isteğe bağlı)">
+      <button class="btn btn-mini btn-yesil">Gönder</button>
+    </form>
+  <% } %>
   <form method="post" class="mesaj-yaz">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <textarea name="body" rows="2" required maxlength="2000" placeholder="<%= msgs.length ? 'Mesaj yaz...' : 'Merhaba, ilan hâlâ güncel mi?' %>"></textarea>

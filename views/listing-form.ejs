@@ -23,12 +23,25 @@
       <%- include('partials/location-select', { secIl: form.il || '', secIlce: form.ilce || '', ilBos: 'İl seçin', ilceBos: 'İlçe seçin', zorunlu: true }) %>
     </div>
     <label>Açıklama<textarea name="description" rows="6" required minlength="10" maxlength="3000" placeholder="Ürünün durumu, kullanım süresi, kusurları..."><%= form.description || '' %></textarea></label>
-    <label>Fotoğraf <small>(JPG, PNG veya WEBP, en fazla 5 MB)</small>
-      <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
-    </label>
-    <% if (edit && form.image) { %>
-      <div class="mevcut-foto"><img src="/uploads/<%= form.image %>" alt=""><label class="radio"><input type="checkbox" name="remove_image" value="1"> Fotoğrafı kaldır</label></div>
+    <% if (edit && fotolar.length) { %>
+      <fieldset class="foto-yonet">
+        <legend>Mevcut fotoğraflar</legend>
+        <div class="foto-liste">
+          <% fotolar.forEach(function (f, i) { %>
+            <div class="foto-oge">
+              <img src="/uploads/<%= f.thumb %>" alt="">
+              <label class="radio"><input type="radio" name="cover_img" value="<%= f.id %>" <%= i === 0 ? 'checked' : '' %>> Kapak</label>
+              <label class="radio"><input type="checkbox" name="remove_img" value="<%= f.id %>"> Sil</label>
+            </div>
+          <% }) %>
+        </div>
+      </fieldset>
     <% } %>
+    <label>Fotoğraflar <small>(en fazla <%= MAX_FOTO %> adet, her biri en fazla 10 MB · otomatik küçültülür)</small>
+      <input type="file" name="photos" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple data-max="<%= MAX_FOTO - (edit ? fotolar.length : 0) %>" class="js-foto">
+    </label>
+    <div class="foto-onizleme" id="fotoOnizleme"></div>
+    <% if (!edit) { %><%- include('partials/turnstile') %><% } %>
     <button class="btn btn-yesil tam"><%= edit ? 'Kaydet' : 'İlanı Yayınla' %></button>
     <p class="kucuk">İlan vermek ücretsizdir. Yayınlayarak <a href="/kullanim-sartlari">Kullanım Şartları</a>'nı kabul etmiş olursunuz.</p>
   </form>

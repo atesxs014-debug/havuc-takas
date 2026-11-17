@@ -9,6 +9,7 @@
     <label>Telefon <small>(isteğe bağlı, ilanlarda gösterilmez)</small><input type="tel" name="phone" autocomplete="tel" value="<%= form.phone || '' %>"></label>
     <label>Şifre <small>(en az 8 karakter)</small><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
     <label class="radio"><input type="checkbox" name="kvkk" value="1" required> <span><a href="/kullanim-sartlari" target="_blank">Kullanım Şartları</a>'nı ve <a href="/kvkk" target="_blank">KVKK Aydınlatma Metni</a>'ni okudum, kabul ediyorum.</span></label>
+    <%- include('../partials/turnstile') %>
     <button class="btn btn-yesil tam">Üye Ol</button>
     <p class="kucuk merkez">Zaten üye misin? <a href="/giris?next=<%= encodeURIComponent(next) %>">Giriş yap</a></p>
   </form>

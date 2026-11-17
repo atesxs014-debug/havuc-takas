@@ -2,14 +2,18 @@
 <h1 class="sayfa-baslik">Yönetim Paneli</h1>
 <nav class="sekmeler">
   <a href="?tab=bekleyen" class="<%= tab === 'bekleyen' ? 'aktif' : '' %>">Reklam başvuruları <span class="rozet"><%= c.bekleyen %></span></a>
-  <a href="?tab=aktif" class="<%= tab === 'aktif' ? 'aktif' : '' %>">Aktif reklamlar (<%= c.aktif %>)</a>
+  <a href="?tab=aktif" class="<%= tab === 'aktif' ? 'aktif' : '' %>">Aktif reklamlar (<%= c.aktif %>)<% if (c.uzatma) { %> <span class="rozet"><%= c.uzatma %> uzatma</span><% } %></a>
   <a href="?tab=gecmis" class="<%= tab === 'gecmis' ? 'aktif' : '' %>">Geçmiş</a>
+  <a href="?tab=onay" class="<%= tab === 'onay' ? 'aktif' : '' %>">Onay bekleyen ilanlar <span class="rozet"><%= c.onay %></span></a>
   <a href="?tab=sikayet" class="<%= tab === 'sikayet' ? 'aktif' : '' %>">Şikayetler <span class="rozet"><%= c.sikayet %></span></a>
   <a href="?tab=ilan" class="<%= tab === 'ilan' ? 'aktif' : '' %>">İlanlar (<%= c.ilan %>)</a>
   <a href="?tab=uye" class="<%= tab === 'uye' ? 'aktif' : '' %>">Üyeler (<%= c.uye %>)</a>
+  <a href="?tab=fiyatlar" class="<%= tab === 'fiyatlar' ? 'aktif' : '' %>">💰 Fiyatlar</a>
+  <a href="?tab=kelimeler" class="<%= tab === 'kelimeler' ? 'aktif' : '' %>">🚫 Yasaklı kelimeler</a>
+  <a href="?tab=yedek" class="<%= tab === 'yedek' ? 'aktif' : '' %>">💾 Yedekler</a>
 </nav>
 
-<% if (!rows.length) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
+<% if (!rows.length && !['fiyatlar', 'kelimeler', 'yedek'].includes(tab)) { %><div class="bos-durum"><p>Burada gösterilecek kayıt yok.</p></div><% } %>
 
 <% if (['bekleyen', 'aktif', 'gecmis'].includes(tab)) { %>
   <div class="admin-liste">
@@ -19,7 +23,7 @@
         <% if (ad.image) { %><img class="reklam-logo" src="/uploads/<%= ad.image %>" alt=""><% } %>
         <div>
           <strong><%= ad.business_name %></strong>
-          <small>📍 <%= konumAdi(ad.il, ad.ilce) %><%= ad.ilce ? '' : ' (il geneli)' %> · Alan <%= ad.slot %> · <%= ad.months %> ay</small>
+          <small>📍 <%= konumAdi(ad.il, ad.ilce) %><%= ad.ilce ? '' : ' (il geneli)' %> · Alan <%= ad.slot %> · <%= ad.months %> ay · <strong><%= ad.price ? fiyat(ad.price) : 'fiyat yok' %></strong> · Ref: <code><%= ad.ref_code %></code></small>
         </div>
         <span class="durum durum-<%= ad.status %>"><%= { pending: 'Bekliyor', active: 'Yayında', rejected: 'Reddedildi', ended: 'Bitti' }[ad.status] %></span>
       </div>
@@ -36,19 +40,83 @@
           <label>Alan <select name="slot"><% for (let i = 1; i <= SLOT_SAYISI; i++) { %><option <%= ad.slot === i ? 'selected' : '' %>><%= i %></option><% } %></select></label>
           <label>Ay <input type="number" name="months" min="1" max="24" value="<%= ad.months %>"></label>
           <input name="note" placeholder="Not (ör. ödeme alındı)">
-          <button class="btn btn-mini btn-yesil">Onayla & Yayınla</button>
+          <button class="btn btn-mini btn-yesil" data-confirm="<%= ad.ref_code %> referanslı ödeme hesabına geçti mi? Reklam yayına alınacak.">Ödeme alındı → Yayınla</button>
           <button class="btn btn-mini btn-cizgi kirmizi" formaction="/yonetim/reklam/<%= ad.id %>/reddet">Reddet</button>
         </form>
       <% } else if (ad.status === 'active') { %>
+        <% if (ad.renew_months) { %><p class="flash flash-info">🔁 Uzatma talebi: +<%= ad.renew_months %> ay, <%= ad.renew_price ? fiyat(ad.renew_price) : 'fiyat yok' %> (Ref: <%= ad.ref_code %>)</p><% } %>
         <form method="post" action="/yonetim/reklam/<%= ad.id %>/uzat" class="admin-form">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
-          <label>+ <input type="number" name="months" min="1" max="24" value="1"> ay</label>
-          <button class="btn btn-mini btn-yesil">Süreyi uzat</button>
+          <label>+ <input type="number" name="months" min="1" max="24" value="<%= ad.renew_months || 1 %>"> ay</label>
+          <button class="btn btn-mini btn-yesil"><%= ad.renew_months ? 'Ödeme alındı → Uzat' : 'Süreyi uzat' %></button>
+          <% if (ad.renew_months) { %><button class="btn btn-mini btn-cizgi" formaction="/yonetim/reklam/<%= ad.id %>/uzatma-iptal">Talebi sil</button><% } %>
           <button class="btn btn-mini btn-cizgi kirmizi" formaction="/yonetim/reklam/<%= ad.id %>/durdur" data-confirm="Reklam yayından kaldırılsın mı?">Yayından kaldır</button>
         </form>
       <% } %>
     </article>
   <% }) %>
+  </div>
+<% } else if (tab === 'onay') { %>
+  <div class="admin-liste">
+  <% rows.forEach(function (l) { %>
+    <article class="admin-kart">
+      <p><a href="/ilan/<%= l.id %>"><strong><%= l.title %></strong></a> <small class="kucuk">· <%= l.seller %> · <%= konumAdi(l.il, l.ilce) %> · <%= tarih(l.created_at) %></small></p>
+      <p class="kucuk">🚩 Yakalanan: <strong><%= l.mod_reason %></strong></p>
+      <p><%= l.description.slice(0, 300) %></p>
+      <div class="admin-form">
+        <form method="post" action="/yonetim/ilan/<%= l.id %>/durum"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="onay"><button name="status" value="active" class="btn btn-mini btn-yesil">Onayla, yayınla</button></form>
+        <form method="post" action="/yonetim/ilan/<%= l.id %>/durum"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="onay"><button name="status" value="rejected" class="btn btn-mini btn-cizgi kirmizi">Reddet</button></form>
+      </div>
+    </article>
+  <% }) %>
+  </div>
+<% } else if (tab === 'fiyatlar') { %>
+  <form method="post" action="/yonetim/fiyatlar" class="kart-form form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">Aylık reklam fiyatları (TL)</h2>
+    <p class="kucuk">Boş bırakılan fiyatlar sitede "Teklif alın" olarak görünür. Değişiklik yeni başvurulara uygulanır.</p>
+    <div class="tablo-sar"><table class="tablo">
+      <thead><tr><th>Grup</th><th>İlçe reklamı / ay</th><th>İl geneli reklam / ay</th></tr></thead>
+      <tbody>
+      <% gruplar.forEach(function (g) { %>
+        <tr><td><%= g.ad %></td>
+          <td><input name="ilce_<%= g.key %>" inputmode="numeric" value="<%= fiyatTablo[g.key].ilce || '' %>" placeholder="örn. 500"></td>
+          <td><input name="il_<%= g.key %>" inputmode="numeric" value="<%= fiyatTablo[g.key].il || '' %>" placeholder="örn. 1500"></td></tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <button class="btn btn-yesil">Fiyatları kaydet</button>
+  </form>
+  <form method="post" action="/yonetim/fiyatlar/ozel" class="kart-form form" style="margin-top:16px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="form-baslik">Belirli bir il/ilçe için özel fiyat</h2>
+    <p class="kucuk">Örneğin Kadıköy veya Çankaya'yı grubundan daha pahalı yapmak için. Fiyatı boş bırakırsan özel fiyat silinir.</p>
+    <div class="iki-kolon"><%- include('partials/location-select', { secIl: '', secIlce: '', ilBos: 'İl seçin', ilceBos: 'İl geneli', zorunlu: true, ilceOpsiyonel: true }) %></div>
+    <label>Aylık fiyat (TL)<input name="price" inputmode="numeric"></label>
+    <button class="btn btn-yesil">Kaydet</button>
+    <% if (ozel.length) { %>
+      <div class="tablo-sar"><table class="tablo"><thead><tr><th>Konum</th><th>Aylık</th></tr></thead><tbody>
+        <% ozel.forEach(function (o) { %><tr><td><%= konumAdi(o.il, o.ilce) %><%= o.ilce ? '' : ' (il geneli)' %></td><td><%= fiyat(o.price) %></td></tr><% }) %>
+      </tbody></table></div>
+    <% } %>
+  </form>
+<% } else if (tab === 'kelimeler') { %>
+  <form method="post" action="/yonetim/kelimeler" class="kart-form form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <p class="kucuk">Her satıra bir kelime veya ifade yaz. Bunlardan birini içeren ilanlar yayına girmez, "Onay bekleyen ilanlar" sekmesine düşer. Kelimenin ek almış hâlleri de yakalanır (ör. "kapora" → "kaporası"). IBAN numaraları her zaman yakalanır. # ile başlayan satırlar not kabul edilir.</p>
+    <textarea name="kelimeler" rows="18"><%= kelimeler %></textarea>
+    <button class="btn btn-yesil">Kaydet</button>
+  </form>
+<% } else if (tab === 'yedek') { %>
+  <div class="kart-form">
+    <p>Veritabanı her gün otomatik olarak yedeklenir, fotoğraflar artımlı olarak kopyalanır. Son <strong><%= keep %></strong> günün yedeği tutulur.</p>
+    <p class="kucuk">Yedek klasörü: <code><%= yedekDir %></code></p>
+    <form method="post" action="/yonetim/yedek"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-yesil">Şimdi yedek al</button></form>
+    <% if (yedekler.length) { %>
+      <div class="tablo-sar" style="margin-top:14px"><table class="tablo"><thead><tr><th>Dosya</th><th>Boyut</th></tr></thead><tbody>
+        <% yedekler.forEach(function (y) { %><tr><td><%= y.f %></td><td><%= (y.size / 1024).toFixed(0) %> KB</td></tr><% }) %>
+      </tbody></table></div>
+    <% } else { %><p class="kucuk">Henüz yedek yok.</p><% } %>
   </div>
 <% } else if (tab === 'sikayet') { %>
   <div class="admin-liste">
@@ -77,7 +145,7 @@
   <div class="tablo-sar"><table class="tablo">
     <thead><tr><th>#</th><th>Ad</th><th>E-posta</th><th>İlan</th><th>Kayıt</th></tr></thead>
     <tbody><% rows.forEach(function (u) { %>
-      <tr><td><%= u.id %></td><td><%= u.name %><%= u.is_admin ? ' (yönetici)' : '' %></td><td><%= u.email %></td><td><%= u.ilan_sayisi %></td><td><%= tarih(u.created_at) %></td></tr>
+      <tr><td><%= u.id %></td><td><a href="/uye/<%= u.id %>"><%= u.name %></a><%= u.is_admin ? ' (yönetici)' : '' %><%= u.email_verified ? ' ✅' : '' %></td><td><%= u.email %></td><td><%= u.ilan_sayisi %></td><td><%= tarih(u.created_at) %></td></tr>
     <% }) %></tbody>
   </table></div>
 <% } %>

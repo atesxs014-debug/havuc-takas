@@ -1,0 +1,7 @@
+<%- include('partials/head') %>
+<div class="bos-durum"><div class="buyuk-emoji">📧</div>
+  <h1>Önce e-postanı doğrula</h1>
+  <p>İlan vermek ve mesaj göndermek için <strong><%= user.email %></strong> adresine gönderdiğimiz bağlantıya tıklaman gerekiyor. Spam klasörünü de kontrol et.</p>
+  <form method="post" action="/dogrula/tekrar"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= path %>"><button class="btn btn-yesil">Bağlantıyı tekrar gönder</button></form>
+</div>
+<%- include('partials/foot') %>

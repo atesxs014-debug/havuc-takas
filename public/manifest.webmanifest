@@ -1,0 +1,20 @@
+{
+  "name": "Havuç Takas",
+  "short_name": "Havuç Takas",
+  "description": "Komşundan al, komşuna ver. 0₺ komisyon, elden teslim.",
+  "lang": "tr",
+  "start_url": "/?kaynak=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#16843f",
+  "icons": [
+    { "src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/static/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "İlan Ver", "url": "/ilan-ver" },
+    { "name": "Mesajlar", "url": "/mesajlar" }
+  ]
+}

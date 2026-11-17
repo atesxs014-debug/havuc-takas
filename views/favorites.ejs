@@ -1,0 +1,8 @@
+<%- include('partials/head') %>
+<h1 class="sayfa-baslik">Favorilerim <small>(<%= ilanlar.length %>)</small></h1>
+<% if (ilanlar.length) { %>
+  <div class="grid"><% ilanlar.forEach(function (ilan) { %><%- include('partials/card', { ilan, konumGoster: true }) %><% }) %></div>
+<% } else { %>
+  <div class="bos-durum"><p>Henüz favori ilanın yok. Beğendiğin ilanlarda 🤍 simgesine dokun.</p><a class="btn btn-yesil" href="/ilanlar">İlanlara göz at</a></div>
+<% } %>
+<%- include('partials/foot') %>
