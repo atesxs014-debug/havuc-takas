@@ -639,3 +639,9 @@ code { background: var(--zemin); padding: 1px 6px; border-radius: 4px; font-size
 .yg-grafik .eksen-yazi { font-size: 9px; fill: var(--soluk); }
 .tablo-kaydir { overflow-x: auto; margin-top: 8px; }
 .tablo-kaydir th { text-align: left; font-size: 12px; padding: 4px 8px; }
+.kvkk-tablo { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 10px; }
+.kvkk-tablo th, .kvkk-tablo td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--cizgi); }
+.kvkk-tablo th { background: var(--zemin); font-size: 13px; }
+.kvkk-tablo td:first-child { font-weight: 600; width: 34%; }
+.doldurulacak { color: #b42318; font-weight: 700; }
+@media (max-width: 600px) { .kvkk-tablo td:first-child { width: 40%; } .metin { padding: 16px; } }
