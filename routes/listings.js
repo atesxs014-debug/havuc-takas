@@ -37,8 +37,9 @@ function renderListings(req, res, preset = {}) {
   if (tip === 'satilik') where.push('l.price IS NOT NULL');
   if (tip === 'takas') where.push('l.is_swap = 1');
   if (ara) {
-    where.push("(l.title LIKE ? ESCAPE '\\' OR l.description LIKE ? ESCAPE '\\')");
-    const like = '%' + ara.replace(/[\\%_]/g, (c) => '\\' + c) + '%';
+    // SQLite yalnızca İngilizce harfleri küçültebiliyor; Türkçe için kendi fonksiyonumuzla karşılaştırıyoruz
+    where.push("(ara_norm(l.title) LIKE ? ESCAPE '\\' OR ara_norm(l.description) LIKE ? ESCAPE '\\')");
+    const like = '%' + db.arama(ara).replace(/[\\%_]/g, (c) => '\\' + c) + '%';
     params.push(like, like);
   }
   const w = where.join(' AND ');
