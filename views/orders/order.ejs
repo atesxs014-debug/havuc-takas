@@ -28,7 +28,7 @@
 
     <% if (o.status === 'odendi' && rol === 'satici') { %>
       <h2 class="form-baslik">📦 Ürünü kargoya ver</h2>
-      <p class="kucuk">Ürünü <strong><%= SURELER.kargoGun %> gün içinde</strong> aşağıdaki adrese gönder ve takip numarasını gir. Kargo ücretini (<%= fiyat(o.shipping_fee) %>) ödeme aktarımıyla birlikte geri alırsın. Göndermezsen sipariş iptal edilip alıcıya iade edilir.</p>
+      <p class="kucuk">Ürünü <strong><%= SURELER.kargoGun %> gün içinde</strong> aşağıdaki adrese gönder ve takip numarasını gir. <% if (o.shipping_fee > 0) { %>Kargo ücretini (<%= fiyat(o.shipping_fee) %>) ödeme aktarımıyla birlikte geri alırsın.<% } else { %>Ürünü <strong>alıcı ödemeli</strong> gönder; kargo ücretini alıcı teslimatta öder.<% } %> Göndermezsen sipariş iptal edilip alıcıya iade edilir.</p>
       <form method="post" action="/siparis/<%= o.code %>/kargo" class="form">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <div class="iki-kolon">
@@ -75,8 +75,8 @@
       <h2 class="form-baslik">Tutar</h2>
       <table class="tutar-tablo">
         <tr><td>Ürün</td><td><%= fiyat(o.item_price) %></td></tr>
-        <tr><td>Kargo</td><td><%= fiyat(o.shipping_fee) %></td></tr>
-        <% if (rol !== 'satici') { %><tr><td>Hizmet bedeli</td><td><%= fiyat(o.service_fee) %></td></tr>
+        <tr><td>Kargo</td><td><%= o.shipping_fee > 0 ? fiyat(o.shipping_fee) : 'Alıcı ödemeli' %></td></tr>
+        <% if (rol !== 'satici') { %><% if (o.service_fee > 0) { %><tr><td>Hizmet bedeli</td><td><%= fiyat(o.service_fee) %></td></tr><% } %>
         <tr class="toplam"><td>Ödenen</td><td><%= fiyat(o.total) %></td></tr>
         <% } else { %><tr class="toplam"><td>Sana geçecek</td><td><%= fiyat(o.item_price + o.shipping_fee) %></td></tr><% } %>
       </table>

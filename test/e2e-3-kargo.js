@@ -11,7 +11,7 @@ const { B, ok, sql, run, shot } = require('./helpers');
   const ilanVer = async (title, price, kargo = true) => {
     await S.goto(B + '/ilan-ver'); await S.fill('[name=title]', title); await S.selectOption('[name=category]', 'spor-outdoor'); await S.selectOption('[name=condition]', 'iyi'); await S.fill('[name=price]', String(price));
     await S.selectOption('.js-il', 'izmir'); await S.selectOption('.js-ilce', 'buca'); await S.fill('textarea[name=description]', 'Temiz kullanılmış, sorunsuz çalışıyor.');
-    if (kargo) { await S.check('[name=shipping]'); await S.check('input[name=package_size][value=orta]', { force: true }); }
+    if (kargo) { await S.check('[name=shipping]'); }
     await S.click('form.kart-form button.tam');
   };
   await ilanVer('Dağ Bisikleti 26 Jant', 1000);
@@ -31,7 +31,7 @@ const { B, ok, sql, run, shot } = require('./helpers');
   // alıcı
   await register(A, 'Alıcı Mehmet', 'alici@test.com');
   await A.goto(bisiklet); const btn = await A.locator('a:has-text("Kargoyla Satın Al")').textContent();
-  ok(btn.includes('1.180 TL'), `satın al butonu: ${btn.trim()} (1000 + 130 kargo + 50 hizmet)`);
+  ok(btn.includes('1.000 TL'), `satın al butonu: ${btn.trim()} (yalnızca ürün; kargo alıcı ödemeli, hizmet bedeli yok)`);
   await A.click('a:has-text("Kargoyla Satın Al")');
   await A.fill('[name=ship_phone]', '0555 111 22 33'); await A.selectOption('.js-il', 'ankara'); await A.selectOption('.js-ilce', 'cankaya');
   await A.fill('textarea[name=ship_address]', 'Kızılay Mah. Atatürk Bulvarı No:10 Daire 4'); await A.check('[name=onay]');
@@ -71,7 +71,7 @@ const { B, ok, sql, run, shot } = require('./helpers');
   run("require('./lib/orders').otomatik().then(()=>process.exit(0))");
   await A.goto(B + '/siparis/' + code3); ok((await A.locator('.durum').textContent()).includes('İade'), 'kargolanmayan sipariş otomatik iade edildi');
   // kargo ayarları
-  await S.goto(B + '/yonetim?tab=kargo'); await S.fill('[name=kargo_orta]', '150'); await S.fill('[name=hizmet_yuzde]', '4'); await S.click('form[action="/yonetim/kargo"] button');
-  await C.goto(cadir); ok((await C.locator('a:has-text("Kargoyla Satın Al")').textContent()).includes('2.230 TL'), 'ayar değişti: 2000 + 150 + 80 = 2.230 TL');
+  await S.goto(B + '/yonetim?tab=kargo'); ok(await S.locator('[name^=kargo_], [name^=hizmet_]').count() === 0, 'yönetimde kargo/hizmet ücreti ayarı yok');
+  await C.goto(cadir); ok((await C.locator('a:has-text("Kargoyla Satın Al")').textContent()).includes('2.000 TL'), 'çadır: yalnızca ürün bedeli 2.000 TL');
   console.log('JS hataları:', errs); await br.close();
 })();

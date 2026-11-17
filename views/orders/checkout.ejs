@@ -20,8 +20,7 @@
     <h2 class="form-baslik">Ödeme özeti</h2>
     <table class="tutar-tablo">
       <tr><td>Ürün<% if (typeof teklif !== 'undefined' && teklif) { %> <small class="kucuk">(kabul edilen teklif)</small><% } %></td><td><%= fiyat(tutar.urun) %></td></tr>
-      <tr><td>Kargo</td><td><%= fiyat(tutar.kargo) %></td></tr>
-      <tr><td>Güvenli ödeme hizmet bedeli</td><td><%= fiyat(tutar.hizmet) %></td></tr>
+      <tr><td>Kargo</td><td>Alıcı ödemeli <small class="kucuk">(teslimatta kargo firmasına)</small></td></tr>
       <tr class="toplam"><td>Toplam</td><td><%= fiyat(tutar.toplam) %></td></tr>
     </table>
     <ul class="guvence">

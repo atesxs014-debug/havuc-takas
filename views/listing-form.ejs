@@ -34,13 +34,7 @@
         <label class="radio"><input type="checkbox" name="shipping" value="1" <%= form.shipping ? 'checked' : '' %>> <span>Uzaktaki alıcılar da <strong>güvenli ödemeyle</strong> satın alabilsin. Para, alıcı ürünü teslim alınca sana geçer.</span></label>
         <div class="kargo-detay">
           <% if (!hesapHazir) { %><p class="kucuk">ℹ️ Bunun için bir kez <a href="/hesabim/odeme-bilgileri?next=<%= encodeURIComponent(path) %>" target="_blank">ödeme bilgilerini</a> girmen gerekiyor.</p><% } %>
-          <p class="kucuk">Paket boyu (kargo ücretini alıcı öder, ödemeyle birlikte sana aktarılır):</p>
-          <div class="paketler">
-            <% PAKETLER.forEach(function (p) { %>
-              <label class="paket"><input type="radio" name="package_size" value="<%= p.key %>" <%= (form.package_size || 'orta') === p.key ? 'checked' : '' %>>
-                <strong><%= p.ad %> · <%= fiyat(kargoAyar[p.key]) %></strong><small><%= p.aciklama %></small></label>
-            <% }) %>
-          </div>
+          <p class="kucuk">🚚 Ürünü <strong>alıcı ödemeli</strong> gönderirsin; kargo ücretini alıcı teslimatta kargo firmasına öder. Site komisyon veya kargo ücreti almaz.</p>
         </div>
       </fieldset>
     <% } %>

@@ -69,10 +69,10 @@ router.get('/', (req, res) => {
     rows = db.prepare(`SELECT o.*, b.name AS buyer, s.name AS seller FROM orders o JOIN users b ON b.id = o.buyer_id JOIN users s ON s.id = o.seller_id
       WHERE o.status != 'odeme_bekliyor' AND NOT (o.status = 'iptal' AND o.paid_at IS NULL)
       ORDER BY o.status = 'itiraz' DESC, o.status IN ('odendi','kargoda') DESC, o.id DESC LIMIT 300`).all();
-    Object.assign(extra, { DURUMLAR: orders.DURUMLAR, ciro: db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(service_fee),0) AS hizmet, COALESCE(SUM(total),0) AS hacim
+    Object.assign(extra, { DURUMLAR: orders.DURUMLAR, ciro: db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS hacim
       FROM orders WHERE status = 'tamamlandi'`).get() });
   }
-  else if (tab === 'kargo') Object.assign(extra, { kargoAyar: orders.ayarlar(), PAKETLER: orders.PAKETLER, saglayici: (require('../lib/payments').provider() || { name: 'kapalı' }).name });
+  else if (tab === 'kargo') Object.assign(extra, { saglayici: (require('../lib/payments').provider() || { name: 'kapalı' }).name });
   else if (tab === 'fiyatlar') Object.assign(extra, { gruplar: pricing.GRUPLAR, fiyatTablo: pricing.tablo(), ozel: pricing.overrides() });
   else if (tab === 'grafik') { const ist = require('../lib/istatistik'); Object.assign(extra, { grafikler: ist.hepsi(), grafikSvg: ist.svg, grafikGun: ist.GUN, sayi: ist.sayi }); }
   else if (tab === 'kelimeler') extra.kelimeler = moderation.wordsText();
@@ -174,12 +174,6 @@ router.post('/ilan/:id/durum', h.verifyCsrf, (req, res, next) => {
   h.flash(req, 'success', status === 'active' ? 'İlan yayında.' : 'İlan yayından kaldırıldı.');
   const back = ['sikayet', 'onay'].includes(req.body.back) ? req.body.back : 'ilan';
   res.redirect('/yonetim?tab=' + back);
-});
-
-router.post('/kargo', h.verifyCsrf, (req, res) => {
-  orders.setAyarlar(req.body);
-  h.flash(req, 'success', 'Kargo ve hizmet bedeli ayarları kaydedildi.');
-  res.redirect('/yonetim?tab=kargo');
 });
 
 router.post('/siparis/:id/:islem', h.verifyCsrf, async (req, res, next) => {

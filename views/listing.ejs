@@ -70,7 +70,7 @@
         <% if (kargo && !kargo.engel) { %>
           <div class="kargo-kutu">
             <p><strong>📦 Kargoyla güvenli satın al</strong></p>
-            <p class="kucuk">Ürün <%= fiyat(kargo.tutar.urun) %> + kargo <%= fiyat(kargo.tutar.kargo) %> + hizmet bedeli <%= fiyat(kargo.tutar.hizmet) %></p>
+            <p class="kucuk">Kargo alıcı ödemeli · komisyon yok</p>
             <a class="btn btn-turuncu tam" href="/ilan/<%= ilan.id %>/satin-al">Kargoyla Satın Al · <%= fiyat(kargo.tutar.toplam) %></a>
             <p class="kucuk">🔒 Paran, ürünü teslim alıp onaylayana kadar güvende bekler.</p>
           </div>
