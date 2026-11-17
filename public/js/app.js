@@ -190,14 +190,24 @@
     var b = document.createElement('button');
     b.type = 'button';
     b.className = 'sifre-goster';
-    b.textContent = 'Göster';
     b.setAttribute('aria-label', 'Şifreyi göster');
+    b.setAttribute('aria-pressed', 'false');
+    b.title = 'Şifreyi göster';
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<g class="goz"><path class="goz-dis" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/>' +
+      '<circle class="goz-bebek" cx="12" cy="12" r="3.2"/></g>' +
+      '<line class="goz-cizgi" x1="3.5" y1="3.5" x2="20.5" y2="20.5"/></svg>';
     b.addEventListener('click', function () {
       var gizli = inp.type === 'password';
       inp.type = gizli ? 'text' : 'password';
-      b.textContent = gizli ? 'Gizle' : 'Göster';
+      b.classList.toggle('acik', gizli);
+      b.setAttribute('aria-pressed', gizli ? 'true' : 'false');
       b.setAttribute('aria-label', gizli ? 'Şifreyi gizle' : 'Şifreyi göster');
-      inp.focus();
+      b.title = gizli ? 'Şifreyi gizle' : 'Şifreyi göster';
+      b.classList.remove('kirp'); void b.offsetWidth; b.classList.add('kirp');
+      // imleci sona al, yazmaya devam edilebilsin
+      var n = inp.value.length; inp.focus();
+      try { inp.setSelectionRange(n, n); } catch (e) {}
     });
     kutu.appendChild(b);
   });

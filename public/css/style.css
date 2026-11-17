@@ -432,10 +432,31 @@ code { background: var(--zemin); padding: 1px 6px; border-radius: 4px; font-size
 .durum-tamamlandi { background: var(--yesil-acik); color: var(--yesil-koyu); }
 .durum-iade, .durum-iptal { background: #f1f1f1; color: var(--soluk); }
 
-/* Şifre göster + beni hatırla */
+/* Şifre göster (animasyonlu göz) + beni hatırla */
 .sifre-kutu { position: relative; display: block; }
-.sifre-kutu input { width: 100%; padding-right: 72px; }
-.sifre-goster { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--yesil); font-weight: 600; font-size: 13px; padding: 6px 8px; cursor: pointer; border-radius: 6px; }
-.sifre-goster:hover { background: var(--yesil-acik); }
+.sifre-kutu input { width: 100%; padding-right: 52px; }
+.sifre-kutu input:not([type=password]) { letter-spacing: .02em; }
+.sifre-goster {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; background: transparent; color: var(--soluk);
+  cursor: pointer; transition: background .2s, color .2s, transform .15s;
+}
+.sifre-goster:hover { background: var(--yesil-acik); color: var(--yesil); }
+.sifre-goster:active { transform: translateY(-50%) scale(.88); }
+.sifre-goster:focus-visible { outline: 2px solid var(--yesil); outline-offset: 2px; }
+.sifre-goster.acik { color: var(--yesil); }
+.sifre-goster svg { width: 22px; height: 22px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.sifre-goster .goz { transform-origin: 12px 12px; }
+.sifre-goster .goz-bebek { fill: currentColor; stroke: none; transform-origin: 12px 12px; transform: scale(.55); transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+.sifre-goster.acik .goz-bebek { transform: scale(1); }
+.sifre-goster .goz-cizgi { stroke-dasharray: 30; stroke-dashoffset: 0; transition: stroke-dashoffset .35s ease; }
+.sifre-goster.acik .goz-cizgi { stroke-dashoffset: 30; }
+.sifre-goster.kirp .goz { animation: goz-kirp .32s ease; }
+@keyframes goz-kirp { 0%, 100% { transform: scaleY(1); } 45% { transform: scaleY(.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .sifre-goster .goz-bebek, .sifre-goster .goz-cizgi { transition: none; }
+  .sifre-goster.kirp .goz { animation: none; }
+}
 .giris-alt { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .giris-alt label.radio { margin: 0; }
